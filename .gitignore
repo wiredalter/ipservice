@@ -1,0 +1,25 @@
+# --- Production Docker/env files ---
+.env
+.env.*
+
+# --- Dependencies ---
+node_modules/
+
+
+# --- Heavy Databases (Download these on the server instead) ---
+ip_dbs/
+*.mmdb
+*.BIN
+
+# --- Secrets & SSL ---
+npm/letsencrypt/
+npm/data/
+.env
+
+# --- OS/Editor Files ---
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.bak
+.github/instructions/

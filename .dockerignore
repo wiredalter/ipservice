@@ -1,0 +1,46 @@
+# --- DB files ---
+# mount these via volumes
+ip_dbs
+ip_dbs/
+*.mmdb
+*LITE*.BIN
+db_scripts/
+
+# --- Nginx Proxy Manager Data ---
+npm
+npm/data
+npm/letsencrypt
+
+# --- Node Dependencies & Logs ---
+node_modules
+npm-debug.log
+yarn-error.log
+
+# --- local build/test files ---
+public/style.min.css
+views/app.min.js
+
+# --- Git & Config ---
+.git/
+.github
+.gitignore
+.env
+.env.*
+.dockerignore
+renovate.json
+
+# --- Docker Configs ---
+docker-compose.yml
+docker-compose-prod.yml
+Dockerfile
+nodhi.Dockerfile
+
+# --- OS & Editor Junk ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Backup/Archive ---
+archive/
+*.bak
