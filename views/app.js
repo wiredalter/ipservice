@@ -34,8 +34,13 @@ function initMap(cartoKey) { // cartoKey is kept for signature compatibility but
       sources: {
         'osm': {
           type: 'raster',
-          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tiles: [
+            'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          ],
           tileSize: 256,
+          maxzoom: 19,
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors'
         }
       },
@@ -54,17 +59,23 @@ function initMap(cartoKey) { // cartoKey is kept for signature compatibility but
     compact: true
   }));
 
+  map.on('load', () => {
+    map.resize();
+  });
+
   updateMapTheme(isDark ? "dark" : "light");
 }
 
 function updateMapTheme(theme) {
-  const mapEl = document.getElementById("map");
-  if (!mapEl) return;
-  if (theme === "dark") {
-    mapEl.style.filter = "invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)";
-  } else {
-    mapEl.style.filter = "none";
-  }
+  setTimeout(() => {
+    const mapCanvas = document.querySelector(".maplibregl-canvas");
+    if (!mapCanvas) return;
+    if (theme === "dark") {
+      mapCanvas.style.filter = "invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)";
+    } else {
+      mapCanvas.style.filter = "none";
+    }
+  }, 100);
 }
 
 let marker;
@@ -169,10 +180,14 @@ async function fetchSmartIPs() {
         const secRes = await fetch(missingUrl);
         if (secRes.ok) {
           const secData = await secRes.json();
-          displayArea.innerHTML += createIpRow(secData.ip, missingType, false); // false = isSecondary
+          if (secData.ip && secData.ip !== primaryData.ip) {
+            displayArea.innerHTML += createIpRow(secData.ip, missingType, false); // false = isSecondary
+          }
+        } else {
+          console.error(`Secondary fetch failed with status: ${secRes.status}`);
         }
       } catch (e) {
-        console.log("Secondary protocol unavailable.");
+        console.error("Secondary protocol fetch error:", e.message);
       }
     }
   } catch (err) {
@@ -233,6 +248,7 @@ function populateDetails(data) {
   if (data.latitude && data.longitude) {
     const lat = parseFloat(data.latitude);
     const lon = parseFloat(data.longitude);
+    map.resize();
     map.jumpTo({ center: [lon, lat], zoom: 13 });
     if (marker) marker.remove();
 

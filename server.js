@@ -130,8 +130,8 @@ app.use(globalLimiter);
 // Expose dynamic frontend configuration from environment variables set in docker-compose
 app.get("/api/config", (req, res) => {
   res.json({
-    v4_url: process.env.V4_API_URL || "https://v4.ipsearch.uk/api/info",
-    v6_url: process.env.V6_API_URL || "https://v6.ipsearch.uk/api/info",
+    v4_url: process.env.V4_API_URL || "https://ipv4.ipsearch.uk/api/info",
+    v6_url: process.env.V6_API_URL || "https://ipv6.ipsearch.uk/api/info",
     carto_api_key: process.env.CARTO_API_KEY || "",
   });
 });
