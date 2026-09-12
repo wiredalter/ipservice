@@ -1,0 +1,73 @@
+{
+  "name": "maxmind",
+  "version": "5.0.7",
+  "homepage": "https://github.com/runk/node-maxmind",
+  "description": "IP lookup using Maxmind databases",
+  "keywords": [
+    "maxmind",
+    "mmdb",
+    "geo",
+    "geoip",
+    "geoip2",
+    "geobase",
+    "geo lookup",
+    "ip base",
+    "geocode",
+    "timezone",
+    "asn",
+    "geo lookup",
+    "ip lookup"
+  ],
+  "author": "Dmitry Shirokov <deadrunk@gmail.com>",
+  "contributors": [
+    "Thomas Birke @quafzi <quafzi@netextreme.de>",
+    "Afzaal Ameer @afzaalace",
+    "Andrew N Golovkov @AndorCS",
+    "Gregory Oschwald @oschwald",
+    "Mariano Facundo Scigliano @MarianoFacundoArch"
+  ],
+  "dependencies": {
+    "mmdb-lib": "3.0.3",
+    "tiny-lru": "13.0.0"
+  },
+  "devDependencies": {
+    "@swc/core": "1.15.47",
+    "@swc/jest": "0.2.39",
+    "@types/ip6addr": "0.2.6",
+    "@types/jest": "30.0.0",
+    "@types/netmask": "2.0.6",
+    "@types/node": "24.13.3",
+    "@types/sinon": "21.0.1",
+    "ip-address": "10.4.0",
+    "ip6addr": "0.2.5",
+    "jest": "30.4.2",
+    "prettier": "3.9.6",
+    "semantic-release": "25.0.8",
+    "sinon": "21.1.2",
+    "typescript": "6.0.3"
+  },
+  "repository": "https://github.com/runk/node-maxmind",
+  "bugs": {
+    "mail": "deadrunk@gmail.com",
+    "url": "http://github.com/runk/node-maxmind/issues"
+  },
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "engines": {
+    "node": ">=12",
+    "npm": ">=6"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "rm -rf lib/* && tsc",
+    "format": "prettier --write .",
+    "semantic-release": "semantic-release",
+    "test": "jest"
+  },
+  "publishConfig": {
+    "provenance": true
+  }
+}

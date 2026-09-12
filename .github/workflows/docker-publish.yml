@@ -1,0 +1,81 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ "main", "dev-*", "dev" ]
+    tags: [ 'v*.*.*' ]
+    paths-ignore: [ '**.md', '.gitignore', 'renovate.json', 'LICENSE', 'docs/**', 'nodhi.Dockerfile', 'docker-compose.yml', 'docker-compose.prod.yml' ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # 1. Prepare for Multi-Arch Build
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # 2. Login to Registries
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to DHI Registry
+        uses: docker/login-action@v4
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 3. Extract Metadata (Tags & Labels)
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+
+      # 4. Build & Push
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      # 5. Cleanup Old Images
+      - name: Clean up old GHCR images
+        if: github.ref_type == 'branch'
+        uses: buildplan/ghcr-cleaner@v1
+        continue-on-error: true
+        with:
+          owner-type: org
+          token: ${{ secrets.PAT_TOKEN }}
+          repository-owner: ${{ github.repository_owner }}
+          repository-name: ${{ github.event.repository.name }}
+          delete-untagged: true
+          keep-at-most: 5

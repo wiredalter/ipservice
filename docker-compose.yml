@@ -1,0 +1,30 @@
+services:
+  ip-echo:
+    build: .
+#    image: ghcr.io/buildplan/ip-service:latest
+    container_name: ip-echo
+    restart: unless-stopped
+    user: "node"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:4040:4040"
+    environment:
+      - NODE_ENV=production
+      - PORT=4040
+      - MAX_MEMORY_MB=2048 # Healthcheck memory limit
+      - CROWDSEC_URL=http://crowdsec:8080
+      - CROWDSEC_API_KEY=${CROWDSEC_API_KEY}
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+      - SNIFFCAT_API_KEY=${SNIFFCAT_API_KEY}
+      - SPAMVERIFY_API_KEY=${SPAMVERIFY_API_KEY}
+      - CARTO_API_KEY=${CARTO_API_KEY}
+    volumes:
+      - ./ip_dbs:/app/db:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
