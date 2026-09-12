@@ -140,7 +140,11 @@ async function fetchSmartIPs() {
     } catch (_) {
       // Config unavailable — map will load without key (watermark shown)
     }
-    initMap(cartoKey);
+    try {
+      initMap(cartoKey);
+    } catch (e) {
+      console.error("Map initialization failed:", e);
+    }
 
     let apiUrl = "/api/info";
     const rawSearch = window.location.search.substring(1).trim();
