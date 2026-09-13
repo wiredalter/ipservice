@@ -23,69 +23,75 @@ function toggleTheme() {
 initTheme();
 
 let map;
-window.currentMapStyle = 'street';
+window.currentMapStyle = "street";
 
 class MapStyleControl {
   onAdd(map) {
     this._map = map;
-    this._container = document.createElement('div');
-    this._container.className = 'maplibregl-ctrl';
+    this._container = document.createElement("div");
+    this._container.className = "maplibregl-ctrl";
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.style.backgroundColor = '#ffffff';
-    btn.style.color = '#1e293b';
-    btn.style.fontWeight = 'bold';
-    btn.style.fontSize = '12px';
-    btn.style.border = 'none';
-    btn.style.borderRadius = '4px';
-    btn.style.padding = '0 8px';
-    btn.style.height = '29px';
-    btn.style.cursor = 'pointer';
-    btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.1)';
-    btn.style.display = 'flex';
-    btn.style.alignItems = 'center';
-    btn.style.justifyContent = 'center';
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.style.backgroundColor = "#ffffff";
+    btn.style.color = "#27272a";
+    btn.style.fontWeight = "bold";
+    btn.style.fontSize = "12px";
+    btn.style.border = "none";
+    btn.style.borderRadius = "4px";
+    btn.style.padding = "0 8px";
+    btn.style.height = "29px";
+    btn.style.cursor = "pointer";
+    btn.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.1)";
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
     btn.innerHTML = `SAT`;
     btn.title = "Toggle Satellite View";
 
     btn.onclick = () => {
-      const isSat = window.currentMapStyle === 'satellite';
-      window.currentMapStyle = isSat ? 'street' : 'satellite';
-      btn.innerHTML = isSat ? 'SAT' : 'MAP';
+      const isSat = window.currentMapStyle === "satellite";
+      window.currentMapStyle = isSat ? "street" : "satellite";
+      btn.innerHTML = isSat ? "SAT" : "MAP";
 
-      const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+      const theme = document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light";
 
-      if (window.currentMapStyle === 'satellite') {
+      if (window.currentMapStyle === "satellite") {
         map.setStyle({
           version: 8,
           sources: {
-            'satellite': {
-              type: 'raster',
-              tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            satellite: {
+              type: "raster",
+              tiles: [
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+              ],
               tileSize: 256,
-              attribution: '&copy; <a href="https://www.esri.com/" target="_blank">Esri</a>'
-            }
+              attribution:
+                '&copy; <a href="https://www.esri.com/" target="_blank">Esri</a>',
+            },
           },
-          layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }]
+          layers: [{ id: "satellite", type: "raster", source: "satellite" }],
         });
       } else {
         map.setStyle({
           version: 8,
           sources: {
-            'osm': {
-              type: 'raster',
+            osm: {
+              type: "raster",
               tiles: [
-                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
               ],
               tileSize: 256,
               maxzoom: 19,
-              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors'
-            }
+              attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors',
+            },
           },
-          layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+          layers: [{ id: "osm", type: "raster", source: "osm" }],
         });
       }
 
@@ -102,44 +108,90 @@ class MapStyleControl {
   }
 }
 
-function initMap(cartoKey) { // cartoKey is kept for signature compatibility but not used
+class CenterMapControl {
+  onAdd(map) {
+    this._map = map;
+    this._container = document.createElement("div");
+    this._container.className = "maplibregl-ctrl";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.style.backgroundColor = "#ffffff";
+    btn.style.color = "#27272a";
+    btn.style.border = "none";
+    btn.style.borderRadius = "4px";
+    btn.style.padding = "0";
+    btn.style.height = "29px";
+    btn.style.width = "29px";
+    btn.style.cursor = "pointer";
+    btn.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.1)";
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+    btn.title = "Center on IP";
+
+    btn.onclick = () => {
+      if (window.currentCoords) {
+        map.flyTo({ center: window.currentCoords, zoom: 13 });
+      }
+    };
+
+    this._container.appendChild(btn);
+    return this._container;
+  }
+
+  onRemove() {
+    this._container.parentNode.removeChild(this._container);
+    this._map = undefined;
+  }
+}
+
+function initMap(cartoKey) {
+  // cartoKey is kept for signature compatibility but not used
   const isDark = document.documentElement.classList.contains("dark");
 
   map = new maplibregl.Map({
-    container: 'map',
+    container: "map",
     style: {
       version: 8,
       sources: {
-        'osm': {
-          type: 'raster',
+        osm: {
+          type: "raster",
           tiles: [
-            'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
           ],
           tileSize: 256,
           maxzoom: 19,
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors'
-        }
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors',
+        },
       },
-      layers: [{
-        id: 'osm',
-        type: 'raster',
-        source: 'osm'
-      }]
+      layers: [
+        {
+          id: "osm",
+          type: "raster",
+          source: "osm",
+        },
+      ],
     },
     center: [-0.09, 51.505], // MapLibre uses [lng, lat]
     zoom: 13,
-    attributionControl: false
+    attributionControl: false,
   });
 
-  map.addControl(new maplibregl.AttributionControl({
-    compact: true
-  }));
+  map.addControl(
+    new maplibregl.AttributionControl({
+      compact: true,
+    }),
+  );
 
-  map.addControl(new MapStyleControl(), 'top-right');
+  map.addControl(new CenterMapControl(), "top-right");
+  map.addControl(new MapStyleControl(), "top-right");
 
-  map.on('load', () => {
+  map.on("load", () => {
     map.resize();
   });
 
@@ -150,8 +202,9 @@ function updateMapTheme(theme) {
   setTimeout(() => {
     const mapCanvas = document.querySelector(".maplibregl-canvas");
     if (!mapCanvas) return;
-    if (theme === "dark" && window.currentMapStyle !== 'satellite') {
-      mapCanvas.style.filter = "invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)";
+    if (theme === "dark" && window.currentMapStyle !== "satellite") {
+      mapCanvas.style.filter =
+        "invert(100%) hue-rotate(180deg) brightness(85%) contrast(85%) grayscale(30%)";
     } else {
       mapCanvas.style.filter = "none";
     }
@@ -183,29 +236,28 @@ function copyWithFeedback(ip, elId, type) {
   });
 }
 
-function createIpRow(ip, type, isPrimary = true) {
+function createIpRow(ip, type) {
   const isV6 = type === "IPv6";
   const badgeColor = isV6
-    ? "bg-purple-900/40 text-purple-600 dark:text-purple-400 border-purple-800"
-    : "bg-blue-900/40 text-blue-600 dark:text-blue-400 border-blue-800";
+    ? "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-800"
+    : "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800";
 
-  const textSize = isPrimary
-    ? "text-3xl md:text-5xl"
-    : "text-xl md:text-2xl text-slate-500 dark:text-slate-400";
-  const padding = isPrimary
-    ? "px-6 py-4"
-    : "px-4 py-2 opacity-80 hover:opacity-100";
+  const textSize = isV6
+    ? "text-xl sm:text-2xl md:text-3xl"
+    : "text-3xl md:text-4xl";
   const iconId = `copy-icon-${type}`;
 
   return `
-    <div class="group cursor-pointer flex flex-col sm:flex-row items-center gap-3 sm:gap-5 bg-white dark:bg-slate-900/60 ${padding} rounded-2xl border border-slate-200 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all w-full md:w-auto min-w-[280px] sm:min-w-[420px] justify-center shadow-lg hover:shadow-blue-900/10 hover:border-blue-500/30 dark:hover:border-blue-500/30" onclick="copyWithFeedback('${ip}', '${iconId}', '${type}')">
-        <span class="px-2.5 py-1 rounded text-[10px] sm:text-xs font-bold border uppercase tracking-wider ${badgeColor} shrink-0">${type}</span>
-        <span class="font-bold tracking-tight break-all font-mono text-center ${textSize} text-slate-800 dark:text-white">${ip}</span>
-        <div id="${iconId}" class="hidden sm:block shrink-0">
-            <svg class="w-5 h-5 text-slate-400 dark:text-slate-600 group-hover:text-blue-500 dark:group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2v-8a2 2 0 012-2z"></path></svg>
+    <div class="atlas-panel group cursor-pointer flex flex-col items-center gap-3 px-6 py-5 hover:border-emerald-400/50 dark:hover:border-emerald-500/50 transition-all flex-1 min-w-[280px] w-full" onclick="copyWithFeedback('${ip}', '${iconId}', '${type}')">
+        <div class="flex justify-between items-center w-full">
+            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-widest ${badgeColor}">${type}</span>
+            <div id="${iconId}" class="shrink-0">
+                <svg class="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2v-8a2 2 0 012-2z"></path></svg>
+            </div>
         </div>
+        <div class="font-bold tracking-tight break-all font-mono text-center ${textSize} text-zinc-800 dark:text-white py-2">${ip}</div>
     </div>
-    `;
+  `;
 }
 
 async function fetchSmartIPs() {
@@ -265,7 +317,11 @@ async function fetchSmartIPs() {
         if (secRes.ok) {
           const secData = await secRes.json();
           if (secData.ip && secData.ip !== primaryData.ip) {
-            displayArea.innerHTML += createIpRow(secData.ip, missingType, false); // false = isSecondary
+            displayArea.innerHTML += createIpRow(
+              secData.ip,
+              missingType,
+              false,
+            ); // false = isSecondary
           }
         } else {
           console.error(`Secondary fetch failed with status: ${secRes.status}`);
@@ -326,7 +382,7 @@ function populateDetails(data) {
   } else {
     proxyEl.innerText = data.usage_type || "Clean";
     proxyEl.className =
-      "px-2 py-0.5 rounded text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20";
+      "px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
   }
 
   if (data.latitude && data.longitude) {
@@ -336,17 +392,21 @@ function populateDetails(data) {
     map.jumpTo({ center: [lon, lat], zoom: 13 });
     if (marker) marker.remove();
 
-    const el = document.createElement('div');
-    el.className = 'custom-marker-wrapper';
+    const el = document.createElement("div");
+    el.className = "custom-marker-wrapper";
     el.innerHTML = `
-      <div class="relative flex h-10 w-10 items-center justify-center">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-50"></span>
-        <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white shadow-md"></span>
+      <div class="relative flex h-8 w-8 items-center justify-center">
+        <div class="absolute inset-0 rounded-full border border-emerald-500/40"></div>
+        <div class="absolute h-full w-[1px] bg-emerald-500/40"></div>
+        <div class="absolute h-[1px] w-full bg-emerald-500/40"></div>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600 shadow-sm shadow-emerald-500/50"></span>
       </div>
     `;
 
-    const popup = new maplibregl.Popup({ offset: 15, focusAfterOpen: false })
-      .setHTML(`<b class="text-slate-800">${data.city}</b>`);
+    const popup = new maplibregl.Popup({
+      offset: 15,
+      focusAfterOpen: false,
+    }).setHTML(`<b class="text-zinc-800">${data.city}</b>`);
 
     marker = new maplibregl.Marker({ element: el })
       .setLngLat([lon, lat])
@@ -415,7 +475,7 @@ async function checkReputation() {
     if (data.is_clean) {
       badge.innerHTML = `NO THREATS DETECTED <span class="text-lg leading-none">ⓘ</span>`;
       badge.className =
-        "px-2 py-1 rounded text-[11px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 transition-colors whitespace-nowrap flex items-center gap-1";
+        "px-2 py-1 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors whitespace-nowrap flex items-center gap-1";
     } else if (data.detections) {
       badge.innerText = `${data.detections.length} THREATS FOUND ⚠️`;
       badge.className =
@@ -443,25 +503,25 @@ function openReputationModal() {
     const copyStr = `IP: ${lastReputationResult.ip} - Status: CLEAN (No threats detected in active feeds)`;
     content.innerHTML = `
             <div class="flex items-center gap-3 mb-4">
-                <div class="p-3 rounded-full bg-sky-500/10 border border-sky-500/20">
-                    <svg class="w-8 h-8 text-sky-600 dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <svg class="w-8 h-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
                 <div>
-                    <h4 class="text-lg font-bold text-slate-900 dark:text-white">No Threats Detected</h4>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">IP: <span class="font-mono text-sky-600 dark:text-sky-400">${lastReputationResult.ip}</span></p>
+                    <h4 class="text-lg font-bold text-zinc-900 dark:text-white">No Threats Detected</h4>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400">IP: <span class="font-mono text-emerald-600 dark:text-emerald-400">${lastReputationResult.ip}</span></p>
                 </div>
             </div>
-            <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <div class="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
                     This IP address was not found in any of our active threat intelligence feeds (Blocklists, Spam lists, or CrowdSec).
                     <br><br>
                     <span class="text-yellow-600 dark:text-yellow-500/90 font-semibold">⚠️ Note:</span>
                     "No threats detected" does <strong>not</strong> guarantee safety. An IP can be malicious but not yet listed.
                 </p>
             </div>
-            <button onclick="navigator.clipboard.writeText('${copyStr}').then(() => showToast('Scan Result Copied!'))" class="mt-4 w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold tracking-wider uppercase transition-colors flex justify-center items-center gap-2">
+            <button onclick="navigator.clipboard.writeText('${copyStr}').then(() => showToast('Scan Result Copied!'))" class="mt-4 w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold tracking-wider uppercase transition-colors flex justify-center items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2v-8a2 2 0 012-2z"></path></svg>
                 Copy Scan Result
             </button>
@@ -475,7 +535,7 @@ function openReputationModal() {
                 <div class="p-3 rounded bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-500/20 flex justify-between items-start">
                     <div>
                         <span class="block font-bold text-red-600 dark:text-red-400 text-sm">${det.source}</span>
-                        <span class="text-xs text-slate-500 dark:text-slate-400">${det.reason || "Listed in blocklist"}</span>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400">${det.reason || "Listed in blocklist"}</span>
                     </div>
                     <span class="px-2 py-0.5 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-500 text-[10px] font-bold rounded uppercase border border-red-200 dark:border-red-500/20">Listed</span>
                 </div>
@@ -492,11 +552,11 @@ function openReputationModal() {
                     </svg>
                 </div>
                 <div>
-                    <h4 class="text-lg font-bold text-slate-900 dark:text-white">Threats Detected</h4>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">IP: <span class="font-mono text-red-600 dark:text-red-400">${lastReputationResult.ip}</span></p>
+                    <h4 class="text-lg font-bold text-zinc-900 dark:text-white">Threats Detected</h4>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400">IP: <span class="font-mono text-red-600 dark:text-red-400">${lastReputationResult.ip}</span></p>
                 </div>
             </div>
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">The following security providers have flagged this IP:</p>
+            <p class="text-sm text-zinc-600 dark:text-zinc-400 mb-2">The following security providers have flagged this IP:</p>
             <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                 ${listHtml}
             </div>
@@ -544,8 +604,8 @@ async function checkWhois() {
 
   content.innerHTML = `
     <div class="text-center py-10">
-      <svg class="animate-spin h-8 w-8 mx-auto text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-      <p class="text-sm text-slate-500">Looking up registry data...</p>
+      <svg class="animate-spin h-8 w-8 mx-auto text-emerald-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+      <p class="text-sm text-zinc-500">Looking up registry data...</p>
     </div>
   `;
   modal.classList.remove("hidden");
@@ -568,62 +628,62 @@ async function checkWhois() {
         .replace(/>/g, "&gt;") // Sanitize HTML first
         .replace(
           emailRegex,
-          '<a href="mailto:$1" class="text-blue-400 hover:text-blue-300 hover:underline">$1</a>',
+          '<a href="mailto:$1" class="text-emerald-600 dark:text-emerald-400 hover:underline">$1</a>',
         );
       // --- RENDER FALLBACK TERMINAL UI ---
       content.innerHTML = `
-                <div class="bg-[#0b1120] border border-slate-700 p-4 rounded-xl font-mono text-[11px] md:text-xs text-green-400 overflow-y-auto max-h-[50vh] custom-scrollbar whitespace-pre-wrap shadow-inner">
+                <div class="bg-zinc-100 dark:bg-[#09090b] border border-zinc-300 dark:border-zinc-700 p-4 rounded-xl font-mono text-[11px] md:text-xs text-emerald-700 dark:text-emerald-400 overflow-y-auto max-h-[50vh] custom-scrollbar whitespace-pre-wrap shadow-inner">
 ${formattedRawText}
                 </div>
-                <p class="text-[10px] text-slate-500 mt-3 text-center uppercase tracking-widest">Fallback: Raw WHOIS Data shown due to unformatted registry</p>
+                <p class="text-[10px] text-zinc-500 mt-3 text-center uppercase tracking-widest">Fallback: Raw WHOIS Data shown due to unformatted registry</p>
             `;
     } else {
       // --- RENDER GRID UI ---
       let emailsHtml =
         data.abuse_contacts.length > 0
           ? data.abuse_contacts
-            .map(
-              (e) =>
-                `<a href="mailto:${e}" class="text-blue-500 hover:underline">${e}</a>`,
-            )
-            .join(", ")
-          : '<span class="text-slate-400">Not provided</span>';
+              .map(
+                (e) =>
+                  `<a href="mailto:${e}" class="text-emerald-500 hover:underline">${e}</a>`,
+              )
+              .join(", ")
+          : '<span class="text-zinc-400">Not provided</span>';
 
       content.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Network Name</span>
-                        <span class="font-mono text-slate-800 dark:text-slate-200 break-all">${data.network_name}</span>
+                    <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
+                        <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Network Name</span>
+                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${data.network_name}</span>
                     </div>
-                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">IP Range</span>
-                        <span class="font-mono text-slate-800 dark:text-slate-200 break-all">${data.network_range}</span>
+                    <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
+                        <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">IP Range</span>
+                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${data.network_range}</span>
                     </div>
-                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50 sm:col-span-2">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Organization</span>
-                        <span class="text-slate-800 dark:text-slate-200">${data.organization}</span>
+                    <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50 sm:col-span-2">
+                        <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Organization</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${data.organization}</span>
                     </div>
-                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Allocation Type</span>
-                        <span class="text-slate-800 dark:text-slate-200">${data.type}</span>
+                    <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
+                        <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Allocation Type</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${data.type}</span>
                     </div>
-                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Registry Handle</span>
-                        <span class="font-mono text-slate-800 dark:text-slate-200 break-all">${data.handle} (${data.country})</span>
+                    <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
+                        <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Registry Handle</span>
+                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${data.handle} (${data.country})</span>
                     </div>
-                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Registered</span>
-                        <span class="text-slate-800 dark:text-slate-200">${data.registration_date}</span>
+                    <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
+                        <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Registered</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${data.registration_date}</span>
                     </div>
-                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Last Updated</span>
-                        <span class="text-slate-800 dark:text-slate-200">${data.updated_date}</span>
+                    <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
+                        <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Last Updated</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${data.updated_date}</span>
                     </div>
                 </div>
                 <div class="mt-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-500/20">
                     <span class="block text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-1">Abuse Contacts</span>
                     <div class="font-medium text-sm">${emailsHtml}</div>
-                    <p class="text-xs text-slate-500 mt-2">Use these contacts to report malicious activity from this IP.</p>
+                    <p class="text-xs text-zinc-500 mt-2">Use these contacts to report malicious activity from this IP.</p>
                 </div>
             `;
     }
@@ -712,7 +772,7 @@ function syntaxHighlight(json) {
   return json.replace(
     /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
     function (match) {
-      let cls = "text-blue-400 dark:text-blue-300"; // Numbers
+      let cls = "text-emerald-400 dark:text-emerald-300"; // Numbers
       if (/^"/.test(match)) {
         if (/:$/.test(match)) {
           cls = "text-indigo-500 dark:text-indigo-300 font-semibold"; // Keys
@@ -722,7 +782,7 @@ function syntaxHighlight(json) {
       } else if (/true|false/.test(match)) {
         cls = "text-orange-500 dark:text-orange-400"; // Booleans
       } else if (/null/.test(match)) {
-        cls = "text-slate-400"; // Null
+        cls = "text-zinc-400"; // Null
       }
       return '<span class="' + cls + '">' + match + "</span>";
     },

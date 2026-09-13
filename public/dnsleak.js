@@ -21,9 +21,9 @@ async function runDnsLeakTest() {
 
   content.innerHTML = `
         <div class="text-center py-8">
-            <svg class="animate-spin h-8 w-8 mx-auto text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-            <h4 class="text-lg font-semibold text-slate-800 dark:text-white">Running DNS Leak Test...</h4>
-            <p class="text-sm text-slate-500 mt-2" id="dnsleak-status">Generating unique identifiers...</p>
+            <svg class="animate-spin h-8 w-8 mx-auto text-emerald-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            <h4 class="text-lg font-semibold text-zinc-800 dark:text-white">Running DNS Leak Test...</h4>
+            <p class="text-sm text-zinc-500 mt-2" id="dnsleak-status">Generating unique identifiers...</p>
         </div>
     `;
 
@@ -77,10 +77,10 @@ async function runDnsLeakTest() {
     let serversHtml = dnsServers
       .map(
         (s) => `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
-                <td class="p-3 font-mono font-bold text-slate-800 dark:text-white break-all">${s.ip}</td>
-                <td class="p-3 text-slate-600 dark:text-slate-300">${s.asn || "Unknown ASN"}</td>
-                <td class="p-3 text-slate-600 dark:text-slate-300 hidden sm:table-cell">${s.country_name || s.country || "Unknown"}</td>
+            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/20 transition-colors">
+                <td class="p-3 font-mono font-bold text-zinc-800 dark:text-white break-all">${s.ip}</td>
+                <td class="p-3 text-zinc-600 dark:text-zinc-300">${s.asn || "Unknown ASN"}</td>
+                <td class="p-3 text-zinc-600 dark:text-zinc-300 hidden sm:table-cell">${s.country_name || s.country || "Unknown"}</td>
             </tr>
         `,
       )
@@ -88,7 +88,7 @@ async function runDnsLeakTest() {
 
     if (dnsServers.length === 0) {
       serversHtml =
-        '<tr><td colspan="3" class="p-4 text-center text-slate-500">No DNS resolvers found.</td></tr>';
+        '<tr><td colspan="3" class="p-4 text-center text-zinc-500">No DNS resolvers found.</td></tr>';
     }
 
     const publicIp = clientIpObj
@@ -135,32 +135,32 @@ async function runDnsLeakTest() {
 
     content.innerHTML = `
             <div class="text-left">
-                <div class="mb-4 text-slate-700 dark:text-slate-300 font-medium">
-                    Your public IP: <span class="font-mono text-blue-600 dark:text-blue-400 font-bold">${publicIp}</span>
+                <div class="mb-4 text-zinc-700 dark:text-zinc-300 font-medium">
+                    Your public IP: <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">${publicIp}</span>
                 </div>
 
-                <h4 class="text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Test complete</h4>
+                <h4 class="text-xl font-bold text-zinc-800 dark:text-white border-b border-zinc-200 dark:border-zinc-700 pb-2 mb-4">Test complete</h4>
 
                 ${dynamicConclusion}
 
-                <div class="max-h-[35vh] overflow-y-auto custom-scrollbar pr-1 mb-6 border border-slate-200 dark:border-slate-700/50 rounded-lg">
+                <div class="max-h-[35vh] overflow-y-auto custom-scrollbar pr-1 mb-6 border border-zinc-200 dark:border-zinc-700/50 rounded-lg">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-slate-100 dark:bg-slate-800/50 text-xs uppercase tracking-wider text-slate-500">
+                            <tr class="bg-zinc-100 dark:bg-zinc-800/50 text-xs uppercase tracking-wider text-zinc-500">
                                 <th class="p-3 rounded-tl-lg">IP</th>
                                 <th class="p-3">ISP / Provider</th>
                                 <th class="p-3 rounded-tr-lg hidden sm:table-cell">Country</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm divide-y divide-slate-200 dark:divide-slate-700/50">
+                        <tbody class="text-sm divide-y divide-zinc-200 dark:divide-zinc-700/50">
                             ${serversHtml}
                         </tbody>
                     </table>
                 </div>
 
-                <h4 class="text-lg font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-3">Understanding the results</h4>
+                <h4 class="text-lg font-bold text-zinc-800 dark:text-white border-b border-zinc-200 dark:border-zinc-700 pb-2 mb-3">Understanding the results</h4>
 
-                <ul class="list-disc list-outside ml-5 space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                <ul class="list-disc list-outside ml-5 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
                     <li>Whenever you type a website address into your browser, your computer asks the servers listed above to convert that name into an IP address.</li>
                     <li>Because these servers handle all your web requests, their owners can associate your public IP with the websites you visit. You need to trust their privacy policy.</li>
                     <li>If you are using a VPN to hide your activity, but the servers above belong to your home ISP (e.g. Comcast or Virgin Media), you have a <strong>DNS leak</strong> and your browsing history is still exposed.</li>
