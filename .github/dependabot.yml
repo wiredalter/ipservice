@@ -11,7 +11,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     assignees:
       - "buildplan"
     groups:
@@ -33,7 +33,7 @@ updates:
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     registries:
       - dhi-dockerhub
     assignees:
