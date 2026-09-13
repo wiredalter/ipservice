@@ -30,20 +30,27 @@ class MapStyleControl {
     this._map = map;
     this._container = document.createElement('div');
     this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-    
+
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'bg-white text-slate-800 px-2 py-1 rounded shadow hover:bg-slate-100 transition-colors';
-    btn.innerHTML = `<span style="font-size: 11px; font-weight: bold;">SAT</span>`;
+    btn.style.backgroundColor = '#ffffff';
+    btn.style.color = '#1e293b';
+    btn.style.fontWeight = 'bold';
+    btn.style.fontSize = '11px';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '4px';
+    btn.style.padding = '4px 8px';
+    btn.style.cursor = 'pointer';
+    btn.innerHTML = `SAT`;
     btn.title = "Toggle Satellite View";
-    
+
     btn.onclick = () => {
       const isSat = window.currentMapStyle === 'satellite';
       window.currentMapStyle = isSat ? 'street' : 'satellite';
-      btn.innerHTML = `<span style="font-size: 11px; font-weight: bold;">${isSat ? 'SAT' : 'MAP'}</span>`;
-      
+      btn.innerHTML = isSat ? 'SAT' : 'MAP';
+
       const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
-      
+
       if (window.currentMapStyle === 'satellite') {
         map.setStyle({
           version: 8,
@@ -76,14 +83,14 @@ class MapStyleControl {
           layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
         });
       }
-      
+
       setTimeout(() => updateMapTheme(theme), 50);
     };
-    
+
     this._container.appendChild(btn);
     return this._container;
   }
-  
+
   onRemove() {
     this._container.parentNode.removeChild(this._container);
     this._map = undefined;
@@ -124,7 +131,7 @@ function initMap(cartoKey) { // cartoKey is kept for signature compatibility but
   map.addControl(new maplibregl.AttributionControl({
     compact: true
   }));
-  
+
   map.addControl(new MapStyleControl(), 'top-right');
 
   map.on('load', () => {
@@ -334,7 +341,7 @@ function populateDetails(data) {
     `;
 
     const popup = new maplibregl.Popup({ offset: 15 })
-        .setHTML(`<b class="text-slate-800">${data.city}</b>`);
+      .setHTML(`<b class="text-slate-800">${data.city}</b>`);
 
     marker = new maplibregl.Marker({ element: el })
       .setLngLat([lon, lat])
