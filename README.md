@@ -1,5 +1,8 @@
 # IPSearch
 
+[![Website](https://img.shields.io/badge/Website-ipsearch.uk-10b981?style=flat-square&logo=googlechrome&logoColor=white)](https://ipsearch.uk)
+[![JSON](https://img.shields.io/badge/JSON-ipsearch.uk%2Fjson-09090b?style=flat-square&logo=json&logoColor=white)](https://ipsearch.uk/json)
+
 An IP intelligence API and web service. It provides real-time geolocation, ISP/ASN details, and risk analysis (VPN, Proxy, and Tor detection).
 
 ## Features
