@@ -1,104 +1,262 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --color-wired-dark: #0b1120;
-  --color-wired-light: #f8fafc;
+  /* Atlas Light Mode ("Parchment") */
+  --color-wired-light: #f4f4f5; /* zinc-100 */
+  --color-atlas-light-surface: #ffffff;
+  --color-atlas-light-inset: #e4e4e7; /* zinc-200 */
+  --color-atlas-light-border: #d4d4d8; /* zinc-300 */
+
+  /* Atlas Dark Mode ("Pitch & Zinc") */
+  --color-wired-dark: #09090b; /* zinc-950 */
+  --color-atlas-dark-surface: #18181b; /* zinc-900 */
+  --color-atlas-dark-inset: #111113;
+  --color-atlas-dark-border: #27272a; /* zinc-800 */
 }
 
 /* --- INTER FONT --- */
 /* renovate: inter-version=v4.1 */
 /* inter-300 - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: normal; font-weight: 300;
-  src: url('/fonts/inter-v20-latin-300.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 300;
+  src: url("/fonts/inter-v20-latin-300.woff2") format("woff2");
 }
 
 /* inter-300italic - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: italic; font-weight: 300;
-  src: url('/fonts/inter-v20-latin-300italic.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 300;
+  src: url("/fonts/inter-v20-latin-300italic.woff2") format("woff2");
 }
 
 /* inter-regular - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: normal; font-weight: 400;
-  src: url('/fonts/inter-v20-latin-regular.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/inter-v20-latin-regular.woff2") format("woff2");
 }
 
 /* inter-italic - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: italic; font-weight: 400;
-  src: url('/fonts/inter-v20-latin-italic.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 400;
+  src: url("/fonts/inter-v20-latin-italic.woff2") format("woff2");
 }
 
 /* inter-500 - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: normal; font-weight: 500;
-  src: url('/fonts/inter-v20-latin-500.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  src: url("/fonts/inter-v20-latin-500.woff2") format("woff2");
 }
 
 /* inter-500italic - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: italic; font-weight: 500;
-  src: url('/fonts/inter-v20-latin-500italic.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 500;
+  src: url("/fonts/inter-v20-latin-500italic.woff2") format("woff2");
 }
 
 /* inter-600 - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: normal; font-weight: 600;
-  src: url('/fonts/inter-v20-latin-600.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  src: url("/fonts/inter-v20-latin-600.woff2") format("woff2");
 }
 
 /* inter-600italic - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: italic; font-weight: 600;
-  src: url('/fonts/inter-v20-latin-600italic.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 600;
+  src: url("/fonts/inter-v20-latin-600italic.woff2") format("woff2");
 }
 
 /* inter-700 - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: normal; font-weight: 700;
-  src: url('/fonts/inter-v20-latin-700.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  src: url("/fonts/inter-v20-latin-700.woff2") format("woff2");
 }
 
 /* inter-700italic - latin */
 @font-face {
-  font-display: swap; font-family: 'Inter';
-  font-style: italic; font-weight: 700;
-  src: url('/fonts/inter-v20-latin-700italic.woff2') format('woff2');
+  font-display: swap;
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 700;
+  src: url("/fonts/inter-v20-latin-700italic.woff2") format("woff2");
 }
 
 /* --- CUSTOM STYLES --- */
-html { scroll-behavior: smooth; }
-body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
-#map { height: 350px; width: 100%; border-radius: 0.75rem; z-index: 1; position: relative; }
-.glass-panel { backdrop-filter: blur(12px); transition: all 0.3s; }
-html.dark .glass-panel { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-html:not(.dark) .glass-panel { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(203, 213, 225, 0.6); box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05); }
-.search-input { transition: all 0.2s; }
-html.dark .search-input { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; color: white; }
-html.dark .search-input:focus { background: rgba(30, 41, 59, 1); border-color: #3b82f6; outline: none; }
-html:not(.dark) .search-input { background: rgba(255, 255, 255, 0.9); border: 1px solid #cbd5e1; color: #0f172a; }
-html:not(.dark) .search-input:focus { background: #ffffff; border-color: #3b82f6; outline: none; }
-/* MapLibre dark mode overrides if needed */
-html.dark .maplibregl-ctrl-group { background-color: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1); }
-html.dark .maplibregl-ctrl-attrib { background-color: rgba(30, 41, 59, 0.8) !important; color: #cbd5e1 !important; }
-.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-html.dark .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
-html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-html:not(.dark) .custom-scrollbar::-webkit-scrollbar-track { background: rgba(203, 213, 225, 0.5); }
-html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
-#toast { visibility: hidden; min-width: 250px; text-align: center; border-radius: 8px; padding: 12px 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
-html.dark #toast { background-color: #1e293b; color: #fff; border: 1px solid rgba(59, 130, 246, 0.5); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
-html:not(.dark) #toast { background-color: #fff; color: #0f172a; border: 1px solid rgba(59, 130, 246, 0.5); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-#toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
+
+#map {
+  height: 350px;
+  width: 100%;
+  border-radius: 0.5rem;
+  z-index: 1;
+  position: relative;
+}
+
+/* Atlas Panels */
+.atlas-panel {
+  transition: all 0.2s ease-out;
+  border-radius: 8px;
+}
+
+html.dark .atlas-panel {
+  background: var(--color-atlas-dark-surface);
+  border: 1px solid var(--color-atlas-dark-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+html:not(.dark) .atlas-panel {
+  background: var(--color-atlas-light-surface);
+  border: 1px solid var(--color-atlas-light-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Search Input */
+.search-input {
+  transition: all 0.2s ease-out;
+}
+
+html.dark .search-input {
+  background: var(--color-atlas-dark-inset);
+  border: 1px solid var(--color-atlas-dark-border);
+  color: #f0f4f8;
+}
+
+html.dark .search-input:focus {
+  background: var(--color-atlas-dark-surface);
+  border-color: #10b981;
+  outline: none;
+  box-shadow: 0 0 0 1px #10b981;
+}
+
+html:not(.dark) .search-input {
+  background: var(--color-atlas-light-inset);
+  border: 1px solid var(--color-atlas-light-border);
+  color: #181e25;
+}
+
+html:not(.dark) .search-input:focus {
+  background: var(--color-atlas-light-surface);
+  border-color: #059669;
+  outline: none;
+  box-shadow: 0 0 0 1px #059669;
+}
+
+/* MapLibre dark mode overrides */
+html.dark .maplibregl-ctrl-group {
+  background-color: var(--color-atlas-dark-surface);
+  border: 1px solid var(--color-atlas-dark-border);
+}
+
+html.dark .maplibregl-ctrl-attrib {
+  background-color: rgba(21, 27, 35, 0.8) !important;
+  color: #8998a9 !important;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-atlas-dark-inset);
+  border-radius: 8px;
+}
+
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #3d4a5d;
+  border-radius: 8px;
+}
+
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #5c6c80;
+}
+
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-atlas-light-inset);
+  border-radius: 8px;
+}
+
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd0d6;
+  border-radius: 8px;
+}
+
+/* Toast */
+#toast {
+  visibility: hidden;
+  min-width: 250px;
+  text-align: center;
+  border-radius: 8px;
+  padding: 12px 16px;
+  position: fixed;
+  z-index: 100;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease-out,
+    bottom 0.2s ease-out;
+}
+
+html.dark #toast {
+  background-color: var(--color-atlas-dark-surface);
+  color: #f0f4f8;
+  border: 1px solid #10b981;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+html:not(.dark) #toast {
+  background-color: var(--color-atlas-light-surface);
+  color: #181e25;
+  border: 1px solid #059669;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+#toast.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 50px;
+}

@@ -320,14 +320,12 @@ app.get("/health", (req, res) => {
     console.error(
       `🚨 Health Check Failed: Memory usage (${rssMB}MB) exceeded limit (${MAX_MEMORY_MB}MB)`,
     );
-    return res
-      .status(503)
-      .json({
-        status: "unhealthy",
-        reason: "Memory limit exceeded",
-        memory_mb: rssMB,
-        limit_mb: MAX_MEMORY_MB,
-      });
+    return res.status(503).json({
+      status: "unhealthy",
+      reason: "Memory limit exceeded",
+      memory_mb: rssMB,
+      limit_mb: MAX_MEMORY_MB,
+    });
   }
   res
     .status(200)
