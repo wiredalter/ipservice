@@ -73,8 +73,8 @@ curl "ipsearch.uk/json?ip=8.8.8.8"
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/buildplan/ip-service.git
-cd ip-service
+git clone https://github.com/wiredalter/ipservice.git
+cd ipservice
 ```
 
 2. **Download Databases:**

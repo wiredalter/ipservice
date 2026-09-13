@@ -1,7 +1,7 @@
 const axios = require("axios");
 const net = require("net");
 
-const appUrl = process.env.APP_URL || "https://github.com/buildplan/ip-service";
+const appUrl = process.env.APP_URL || "https://github.com/wiredalter/ipservice";
 const adminEmail = process.env.ADMIN_EMAIL || "open-source-user@example.com";
 const customUserAgent = `Threat-Intel-API/1.0 (${appUrl}; ${adminEmail})`;
 

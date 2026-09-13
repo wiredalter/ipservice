@@ -256,7 +256,7 @@ function createIpRow(ip, type) {
                 <svg class="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2v-8a2 2 0 012-2z"></path></svg>
             </div>
         </div>
-        <div class="font-bold tracking-tight break-all font-mono text-center ${textSize} text-zinc-800 dark:text-white py-2">${ip}</div>
+        <h1 class="font-bold tracking-tight break-all font-mono text-center ${textSize} text-zinc-800 dark:text-white py-2 m-0">${ip}</h1>
     </div>
   `;
 }
