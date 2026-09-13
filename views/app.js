@@ -29,18 +29,23 @@ class MapStyleControl {
   onAdd(map) {
     this._map = map;
     this._container = document.createElement('div');
-    this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+    this._container.className = 'maplibregl-ctrl';
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.style.backgroundColor = '#ffffff';
     btn.style.color = '#1e293b';
     btn.style.fontWeight = 'bold';
-    btn.style.fontSize = '11px';
+    btn.style.fontSize = '12px';
     btn.style.border = 'none';
     btn.style.borderRadius = '4px';
-    btn.style.padding = '4px 8px';
+    btn.style.padding = '0 8px';
+    btn.style.height = '29px';
     btn.style.cursor = 'pointer';
+    btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.1)';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
     btn.innerHTML = `SAT`;
     btn.title = "Toggle Satellite View";
 
