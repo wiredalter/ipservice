@@ -23,6 +23,84 @@ function toggleTheme() {
 initTheme();
 
 let map;
+window.currentMapStyle = 'street';
+
+class MapStyleControl {
+  onAdd(map) {
+    this._map = map;
+    this._container = document.createElement('div');
+    this._container.className = 'maplibregl-ctrl';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.backgroundColor = '#ffffff';
+    btn.style.color = '#1e293b';
+    btn.style.fontWeight = 'bold';
+    btn.style.fontSize = '12px';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '4px';
+    btn.style.padding = '0 8px';
+    btn.style.height = '29px';
+    btn.style.cursor = 'pointer';
+    btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.1)';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.innerHTML = `SAT`;
+    btn.title = "Toggle Satellite View";
+
+    btn.onclick = () => {
+      const isSat = window.currentMapStyle === 'satellite';
+      window.currentMapStyle = isSat ? 'street' : 'satellite';
+      btn.innerHTML = isSat ? 'SAT' : 'MAP';
+
+      const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+
+      if (window.currentMapStyle === 'satellite') {
+        map.setStyle({
+          version: 8,
+          sources: {
+            'satellite': {
+              type: 'raster',
+              tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+              tileSize: 256,
+              attribution: '&copy; <a href="https://www.esri.com/" target="_blank">Esri</a>'
+            }
+          },
+          layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }]
+        });
+      } else {
+        map.setStyle({
+          version: 8,
+          sources: {
+            'osm': {
+              type: 'raster',
+              tiles: [
+                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+              ],
+              tileSize: 256,
+              maxzoom: 19,
+              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors'
+            }
+          },
+          layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+        });
+      }
+
+      setTimeout(() => updateMapTheme(theme), 50);
+    };
+
+    this._container.appendChild(btn);
+    return this._container;
+  }
+
+  onRemove() {
+    this._container.parentNode.removeChild(this._container);
+    this._map = undefined;
+  }
+}
 
 function initMap(cartoKey) { // cartoKey is kept for signature compatibility but not used
   const isDark = document.documentElement.classList.contains("dark");
@@ -59,6 +137,8 @@ function initMap(cartoKey) { // cartoKey is kept for signature compatibility but
     compact: true
   }));
 
+  map.addControl(new MapStyleControl(), 'top-right');
+
   map.on('load', () => {
     map.resize();
   });
@@ -70,7 +150,7 @@ function updateMapTheme(theme) {
   setTimeout(() => {
     const mapCanvas = document.querySelector(".maplibregl-canvas");
     if (!mapCanvas) return;
-    if (theme === "dark") {
+    if (theme === "dark" && window.currentMapStyle !== 'satellite') {
       mapCanvas.style.filter = "invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)";
     } else {
       mapCanvas.style.filter = "none";
@@ -257,16 +337,16 @@ function populateDetails(data) {
     if (marker) marker.remove();
 
     const el = document.createElement('div');
-    el.className = 'custom-marker';
-    el.style.width = '16px';
-    el.style.height = '16px';
-    el.style.backgroundColor = '#3b82f6';
-    el.style.border = '2px solid #fff';
-    el.style.borderRadius = '50%';
-    el.style.boxShadow = '0 0 4px rgba(0,0,0,0.4)';
+    el.className = 'custom-marker-wrapper';
+    el.innerHTML = `
+      <div class="relative flex h-10 w-10 items-center justify-center">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-50"></span>
+        <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white shadow-md"></span>
+      </div>
+    `;
 
     const popup = new maplibregl.Popup({ offset: 15 })
-        .setHTML(`<b>${data.city}</b>`);
+      .setHTML(`<b class="text-slate-800">${data.city}</b>`);
 
     marker = new maplibregl.Marker({ element: el })
       .setLngLat([lon, lat])
