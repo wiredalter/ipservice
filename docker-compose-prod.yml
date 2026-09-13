@@ -1,7 +1,7 @@
 services:
   ip-echo:
 #    build: .
-    image: ghcr.io/buildplan/ip-service:latest
+    image: ghcr.io/wiredalter/ipservice:latest
     container_name: ip-echo
     restart: unless-stopped
     user: "node"
