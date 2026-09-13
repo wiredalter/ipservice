@@ -33,13 +33,14 @@ class MapStyleControl {
     
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.innerHTML = `<span style="font-size: 11px; font-weight: bold; color: #333;">SAT</span>`;
+    btn.className = 'bg-white text-slate-800 px-2 py-1 rounded shadow hover:bg-slate-100 transition-colors';
+    btn.innerHTML = `<span style="font-size: 11px; font-weight: bold;">SAT</span>`;
     btn.title = "Toggle Satellite View";
     
     btn.onclick = () => {
       const isSat = window.currentMapStyle === 'satellite';
       window.currentMapStyle = isSat ? 'street' : 'satellite';
-      btn.innerHTML = `<span style="font-size: 11px; font-weight: bold; color: #333;">${isSat ? 'SAT' : 'MAP'}</span>`;
+      btn.innerHTML = `<span style="font-size: 11px; font-weight: bold;">${isSat ? 'SAT' : 'MAP'}</span>`;
       
       const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
       
@@ -333,7 +334,7 @@ function populateDetails(data) {
     `;
 
     const popup = new maplibregl.Popup({ offset: 15 })
-        .setHTML(`<b>${data.city}</b>`);
+        .setHTML(`<b class="text-slate-800">${data.city}</b>`);
 
     marker = new maplibregl.Marker({ element: el })
       .setLngLat([lon, lat])
