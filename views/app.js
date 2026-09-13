@@ -193,6 +193,7 @@ function initMap(cartoKey) {
 
   map.on("load", () => {
     map.resize();
+    window.currentCoords = [lon, lat];
   });
 
   updateMapTheme(isDark ? "dark" : "light");
@@ -389,6 +390,7 @@ function populateDetails(data) {
     const lat = parseFloat(data.latitude);
     const lon = parseFloat(data.longitude);
     map.resize();
+    window.currentCoords = [lon, lat];
     map.jumpTo({ center: [lon, lat], zoom: 13 });
     if (marker) marker.remove();
 
@@ -498,6 +500,7 @@ function openReputationModal() {
   const panel = document.getElementById("rep-modal-panel");
 
   modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
 
   if (lastReputationResult.is_clean) {
     const copyStr = `IP: ${lastReputationResult.ip} - Status: CLEAN (No threats detected in active feeds)`;
@@ -585,6 +588,7 @@ function closeReputationModal() {
 
   setTimeout(() => {
     modal.classList.add("hidden");
+    document.body.style.overflow = "";
   }, 300);
 }
 
@@ -609,6 +613,7 @@ async function checkWhois() {
     </div>
   `;
   modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
   setTimeout(() => {
     backdrop.classList.remove("opacity-0");
     panel.classList.remove("opacity-0", "scale-95");
@@ -711,6 +716,7 @@ function closeWhoisModal() {
 
   setTimeout(() => {
     modal.classList.add("hidden");
+    document.body.style.overflow = "";
   }, 300);
 }
 
