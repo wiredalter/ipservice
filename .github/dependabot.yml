@@ -12,13 +12,20 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    assignees:
+      - "buildplan"
     groups:
-      all-non-major:
+      non-major:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
     commit-message:
       prefix: "chore(deps):"
 
@@ -29,13 +36,20 @@ updates:
       interval: "weekly"
     registries:
       - dhi-dockerhub
+    assignees:
+      - "buildplan"
     groups:
-      all-non-major:
+      non-major:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
     commit-message:
       prefix: "chore(deps):"
 
@@ -44,12 +58,19 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    assignees:
+      - "buildplan"
     groups:
-      all-non-major:
+      non-major:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
     commit-message:
       prefix: "chore(deps):"
