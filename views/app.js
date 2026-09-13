@@ -345,7 +345,7 @@ function populateDetails(data) {
       </div>
     `;
 
-    const popup = new maplibregl.Popup({ offset: 15 })
+    const popup = new maplibregl.Popup({ offset: 15, focusAfterOpen: false })
       .setHTML(`<b class="text-slate-800">${data.city}</b>`);
 
     marker = new maplibregl.Marker({ element: el })
