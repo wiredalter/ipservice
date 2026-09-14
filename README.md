@@ -82,95 +82,24 @@ cd ipservice
 
 2. **Download Databases:**
 
-The service requires the following database files to be placed in the `ip_dbs/` directory:
+The service requires the following database files in the `ip_dbs/` directory:
 
 * `GeoLite2-City.mmdb` (MaxMind)
 * `GeoLite2-ASN.mmdb` (MaxMind)
+* `ipinfo-asn.mmdb` (IPinfo)
 * `IP2LOCATION-LITE-DB11.IPV6.BIN` (IP2Location)
-* `IP2PROXY-LITE-PX11.IPV6.BIN` (IP2Location)
+* `IP2PROXY-LITE-PX11.BIN` (IP2Location)
+
+These can be fetched and updated automatically using the maintenance scripts in `db_scripts/`.
 
 ### Deployment
 
-**Option 1: Quick Start (Pre-built Image)**
-Uses the pre-built image from the container registry. Ideal for quick deployment without modification.
+For a production deployment using Caddy, CrowdSec, automated database updates, and dual-stack IPv4/IPv6 support, refer to the full [Self-Hosting Guide](views/selfhost.html) or visit `/selfhost` on your instance.
 
-1. Create a `docker-compose.yml` file or use the default provided in the repo.
-2. Start the service:
+A production `docker-compose.yml` integrates the application with Caddy (`ghcr.io/buildplan/cs-caddy:2.11.4`) and CrowdSec (`crowdsecurity/crowdsec:v1.8.1`). Run:
 
 ```bash
 docker compose up -d
-```
-
-**Option 2: Build from Source**
-Build the image locally. This is required if you wish to modify the frontend templates (e.g., `views/index.html`) or backend logic.
-
-1. Edit `docker-compose.yml` to use `build: .` instead of the remote image.
-2. Configure your environment variables for Threat Intelligence APIs (optional but recommended).
-
-**Example `docker-compose.yml` configuration:**
-
-```bash
-services:
-  ip-echo:
-    # Instead of pulling an image, we build from the cloned repo
-    build: .
-    image: ip-service:local  # Optional: tags the built image locally
-    container_name: ip-echo
-    restart: unless-stopped
-    
-    # Run as secure non-root user
-    user: "node"
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-    # Lock to localhost so only npm can talk to it
-    ports:
-      - "127.0.0.1:4040:4040"
-
-    environment:
-      - NODE_ENV=production
-      - PORT=4040
-      # Optional: Add API keys for enhanced threat intelligence
-      - ABUSEIPDB_API_KEY=your_key_here
-      - CROWDSEC_API_KEY=your_key_here
-    
-    # Map DBs exactly where the code looks (/app/db)
-    # Ensure you have the 'ip_dbs' folder populated locally!
-    volumes:
-      - ./ip_dbs:/app/db:ro
-
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 256M
-
-  # --- NGINX PROXY MANAGER ---
-  npm:
-    image: 'jc21/nginx-proxy-manager:2.13.5'
-    container_name: npm
-    restart: unless-stopped
-    
-    # Host mode is critical for accurate IP detection
-    network_mode: host
-
-    volumes:
-      - ./npm/data:/data
-      - ./npm/letsencrypt:/etc/letsencrypt
-    
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 256M
-```
-
-Then build and run::
-
-```bash
-docker compose up -d --build
 ```
 
 ## Environment Variables
