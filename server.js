@@ -311,6 +311,10 @@ app.get("/terms", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "terms.html"));
 });
 
+app.get("/selfhost", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "selfhost.html"));
+});
+
 // --- Health Check ---
 app.get("/health", (req, res) => {
   const memoryUsage = process.memoryUsage();

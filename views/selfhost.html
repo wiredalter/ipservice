@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Self Host - IPSearch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #020617;
+        color: #e2e8f0;
+      }
+      pre {
+        background-color: #0f172a;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        font-size: 0.875rem;
+        border: 1px solid #1e293b;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      code {
+        font-family: "Fira Code", monospace;
+        color: #38bdf8;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col items-center py-12 px-4">
+    <div class="max-w-4xl w-full space-y-8">
+      <div class="border-b border-zinc-800 pb-6 mb-6">
+        <h1 class="text-3xl font-bold text-white mb-2">
+          How to Self-Host IPSearch
+        </h1>
+        <p class="text-zinc-400 text-sm">
+          Run your own IP intelligence service with Docker, CrowdSec, and Caddy.
+        </p>
+      </div>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-semibold text-emerald-400">
+          1. Getting Started
+        </h2>
+        <p class="text-zinc-300 leading-relaxed">
+          You can clone the official repository and make changes to appropriate files to make the service your own. We highlight key changes you can make, or you can self-host it as-is.
+        </p>
+        <pre><code>git clone https://github.com/wiredalter/ipservice.git
+cd ipservice</code></pre>
+        <p class="text-zinc-300 leading-relaxed">
+          Key changes you might want to make:
+        </p>
+        <ul class="list-disc pl-5 text-zinc-400 space-y-2">
+          <li><strong>Branding:</strong> Update the logos, colors, and text in <code>views/index.html</code> and <code>public/style.css</code>.</li>
+          <li><strong>API Keys:</strong> Provide your own API keys for services like AbuseIPDB, MaxMind, SniffCat, etc., in the <code>.env</code> file or <code>docker-compose.yml</code>.</li>
+          <li><strong>Endpoints:</strong> Modify <code>server.js</code> to adjust API rate limits, caching, and custom routes.</li>
+        </ul>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-semibold text-emerald-400">
+          2. DNS Setup
+        </h2>
+        <p class="text-zinc-300 leading-relaxed">
+          To properly host this app (including dual-stack IPv4/IPv6 support), you should set up the following DNS records pointing to your server's IP addresses:
+        </p>
+        <ul class="list-disc pl-5 text-zinc-400 space-y-1">
+          <li><strong>A Record:</strong> <code>ipsearch.yourdomain.com</code> pointing to your server's IPv4 address.</li>
+          <li><strong>AAAA Record:</strong> <code>ipsearch.yourdomain.com</code> pointing to your server's IPv6 address.</li>
+          <li><strong>A Record:</strong> <code>ipv4.ipsearch.yourdomain.com</code> pointing ONLY to your server's IPv4 address (to force IPv4 checks).</li>
+          <li><strong>AAAA Record:</strong> <code>ipv6.ipsearch.yourdomain.com</code> pointing ONLY to your server's IPv6 address (to force IPv6 checks).</li>
+        </ul>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-semibold text-emerald-400">
+          3. Caddy Reverse Proxy Configuration
+        </h2>
+        <p class="text-zinc-300 leading-relaxed">
+          We recommend using Caddy as a reverse proxy. It automatically provisions SSL certificates and can integrate with CrowdSec. Here is an example <code>Caddyfile</code>:
+        </p>
+        <pre><code># --- IP Service (HTTP for CLI Tools) ---
+http://ipsearch.uk, http://ipv6.ipsearch.uk, http://ipv4.ipsearch.uk {
+        # Enable logging so CrowdSec can read the access logs!
+        log {
+                output file /var/log/caddy/ip-cli-access.log {
+                        mode 0640
+                        roll_size 5MiB
+                        roll_keep 3
+                        roll_keep_for 180h
+                }
+                format json
+        }
+
+        # 1. Route ALL port 80 traffic through CrowdSec first!
+        route {
+                crowdsec
+                appsec
+
+                # 2. Match the exact User-Agents from your server.js logic
+                @cli {
+                        header_regexp User-Agent "(?i)(curl|wget|httpie|python|powershell|aiohttp|go-http-client)"
+                }
+
+                # 3. If it's a CLI tool, proxy it directly over HTTP
+                handle @cli {
+                        reverse_proxy ipsearch:4040
+                }
+
+                # 4. For all other HTTP traffic (e.g., normal browsers), force HTTPS
+                handle {
+                        redir https://{host}{uri} permanent
+                }
+        }
+}
+
+# --- IP Service (HTTPS for Web Browsers) ---
+https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://ipv4.ipsearch.uk {
+        log {
+                output file /var/log/caddy/ip-access.log {
+                        mode 0640
+                        roll_size 5MiB
+                        roll_keep 3
+                        roll_keep_for 180h
+                }
+                format json
+        }
+
+        route {
+                crowdsec
+                appsec
+
+                import secure_headers
+                header Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://unpkg.com https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: https://*.openstreetmap.org https://server.arcgisonline.com https://www.abuseipdb.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.ipsearch.uk https://unpkg.com https://bash.ws https://*.bash.ws; worker-src 'self' blob: https://unpkg.com;"
+
+                reverse_proxy ipsearch:4040
+        }
+}</code></pre>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-semibold text-emerald-400">
+          4. Docker Compose Setup
+        </h2>
+        <p class="text-zinc-300 leading-relaxed">
+          You can use Docker Compose to run the app, CrowdSec, and Caddy together. Ensure you have the recommended folder structure (e.g. <code>./caddy/Caddyfile</code>, <code>./crowdsec/config</code>, etc.). Here is the suggested <code>docker-compose.yml</code>:
+        </p>
+        <pre><code>networks:
+  ipsearch-net:
+    driver: bridge
+    name: ipsearch-net
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1
+        - subnet: fda1:b2c3:d4e5::/64
+          gateway: fda1:b2c3:d4e5::1
+
+services:
+  # --- proxy ---  
+  caddy:
+    image: ghcr.io/buildplan/cs-caddy:2.11.4
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+      - ./caddy/logs:/var/log/caddy
+    environment:
+      - LETSE_EMAIL=${LETSE_EMAIL}
+      - CROWDSEC_CADDY_API_KEY=${CROWDSEC_CADDY_API_KEY}
+    networks:
+      ipsearch-net:
+        ipv4_address: 172.30.0.20
+        ipv6_address: fda1:b2c3:d4e5::20
+    restart: unless-stopped
+    depends_on:
+      - ipsearch
+      - crowdsec
+    logging:
+      driver: "json-file"
+      options: { max-size: "5m", max-file: "3" }
+    deploy:
+      resources:
+        limits: { cpus: '0.25', memory: 512M }  
+
+  # --- IP Search ---
+  ipsearch:
+    image: ghcr.io/wiredalter/ipservice:latest
+    container_name: ipsearch
+    restart: unless-stopped
+    user: "node"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:4040:4040"
+    environment:
+      - NODE_ENV=production
+      - PORT=4040
+      - MAX_MEMORY_MB=1024
+      - CROWDSEC_URL=http://crowdsec:8080
+      - CROWDSEC_API_KEY=${CROWDSEC_API_KEY}
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+      - SNIFFCAT_API_KEY=${SNIFFCAT_API_KEY}
+      - SPAMVERIFY_API_KEY=${SPAMVERIFY_API_KEY}
+      - APP_URL=${APP_URL}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - V4_API_URL=${V4_API_URL}
+      - V6_API_URL=${V6_API_URL}
+    networks:
+      ipsearch-net:
+        ipv4_address: 172.30.0.21
+        ipv6_address: fda1:b2c3:d4e5::21
+    volumes:
+      - ./ip_dbs:/app/db:ro
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:v1.8.1
+    container_name: crowdsec
+    restart: unless-stopped
+    networks:
+      ipsearch-net:
+        ipv4_address: 172.30.0.25
+        ipv6_address: fda1:b2c3:d4e5::25
+    volumes:
+      - ./crowdsec/config:/etc/crowdsec:rw
+      - ./crowdsec/data:/var/lib/crowdsec/data:rw
+      - ./caddy/logs:/var/log/caddy:ro
+      - /var/log/syslog:/var/log/host/syslog:ro
+      - /var/log/auth.log:/var/log/host/auth.log:ro
+      - /var/log/kern.log:/var/log/host/kern.log:ro
+    environment:
+      - TZ=Europe/London
+      - GID=$(id -g)
+      - COLLECTIONS=crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/caddy crowdsecurity/linux
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:6060:6060"
+    healthcheck:
+      test: ["CMD", "cscli", "lapi", "status"]
+      interval: 1m
+      timeout: 15s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options: { max-size: "5m", max-file: "3" }
+</code></pre>
+      </section>
+
+      <div class="pt-8 text-center">
+        <a
+          href="/"
+          class="text-zinc-400 hover:text-white underline decoration-zinc-600 underline-offset-4"
+          >← Back to IP Echo</a
+        >
+      </div>
+    </div>
+  </body>
+</html>
