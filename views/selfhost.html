@@ -1,151 +1,395 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Self Host - IPSearch</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body {
-        font-family: "Inter", sans-serif;
-        background-color: #020617;
-        color: #e2e8f0;
-      }
-      pre {
-        background-color: #0f172a;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        overflow-x: auto;
-        font-size: 0.875rem;
-        border: 1px solid #1e293b;
-        margin-top: 0.5rem;
-        margin-bottom: 1rem;
-      }
-      code {
-        font-family: "Fira Code", monospace;
-        color: #38bdf8;
-      }
-    </style>
-  </head>
-  <body class="min-h-screen flex flex-col items-center py-12 px-4">
-    <div class="max-w-4xl w-full space-y-8">
-      <div class="border-b border-zinc-800 pb-6 mb-6">
-        <h1 class="text-3xl font-bold text-white mb-2">
-          How to Self-Host IPSearch
-        </h1>
-        <p class="text-zinc-400 text-sm">
-          Run your own IP intelligence service with Docker, CrowdSec, and Caddy.
-        </p>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Self-Hosting Guide - IPSearch</title>
+  <link rel="stylesheet" href="/style.min.css" />
+  <style>
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #020617;
+      color: #e2e8f0;
+    }
+
+    pre {
+      background-color: #0b1329;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      border: 1px solid #1e293b;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: #38bdf8;
+    }
+
+    pre code {
+      color: #e2e8f0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.875rem;
+    }
+
+    th,
+    td {
+      border: 1px solid #1e293b;
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: #0f172a;
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+
+    td {
+      background-color: #0b1120;
+      color: #cbd5e1;
+    }
+
+    .nav-link {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.15s ease-in-out;
+    }
+
+    .nav-link:hover {
+      color: #38bdf8;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-5xl w-full space-y-10">
+
+    <!-- Header -->
+    <div class="border-b border-zinc-800 pb-6">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-white tracking-tight">
+            Self-Hosting IPSearch
+          </h1>
+          <p class="text-zinc-400 text-sm mt-1">
+            Production deployment guide covering Docker Compose, Caddy reverse proxy, CrowdSec AppSec WAF, and automated
+            database synchronization.
+          </p>
+        </div>
+        <a href="/"
+          class="text-sm px-3 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors">
+          Back to Application
+        </a>
       </div>
 
-      <section class="space-y-4">
-        <h2 class="text-xl font-semibold text-emerald-400">
-          1. Getting Started
-        </h2>
-        <p class="text-zinc-300 leading-relaxed">
-          You can clone the official repository and make changes to appropriate files to make the service your own. We highlight key changes you can make, or you can self-host it as-is.
+      <!-- Table of Contents -->
+      <div class="mt-6 p-4 rounded-lg bg-zinc-900/60 border border-zinc-800">
+        <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+          Contents
         </p>
-        <pre><code>git clone https://github.com/wiredalter/ipservice.git
-cd ipservice</code></pre>
-        <p class="text-zinc-300 leading-relaxed">
-          Key changes you might want to make:
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-1.5 gap-x-4 text-xs">
+          <a href="#architecture" class="nav-link">1. Architecture Overview</a>
+          <a href="#directory-structure" class="nav-link">2. Directory Structure</a>
+          <a href="#dns-configuration" class="nav-link">3. DNS Record Setup</a>
+          <a href="#databases-and-scripts" class="nav-link">4. Databases and Update Scripts</a>
+          <a href="#docker-compose" class="nav-link">5. Docker Compose Setup</a>
+          <a href="#caddyfile" class="nav-link">6. Complete Caddyfile Configuration</a>
+          <a href="#crowdsec-appsec" class="nav-link">7. CrowdSec and AppSec Setup</a>
+          <a href="#customizing-and-building" class="nav-link">8. Customizing and Building from Source</a>
+          <a href="#environment-variables" class="nav-link">9. Environment Variables</a>
+          <a href="#deployment-walkthrough" class="nav-link">10. Step-by-Step Deployment</a>
+          <a href="#verification-testing" class="nav-link">11. Verification and Testing</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. Architecture Overview -->
+    <section id="architecture" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        1. Architecture Overview
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        The deployment is composed of three interconnected services running inside a shared Docker bridge network with
+        dual-stack IPv4 and IPv6 capabilities:
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div class="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <p class="font-semibold text-white mb-1">ipsearch</p>
+          <p class="text-zinc-400 text-xs leading-relaxed">
+            Node.js backend (Express) executing in-memory IP geolocation lookups (MaxMind and IP2Location), threat score
+            calculation, WHOIS/RDAP checks, and CLI output formatting. Listens internally on port 4040.
+          </p>
+        </div>
+        <div class="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <p class="font-semibold text-white mb-1">caddy</p>
+          <p class="text-zinc-400 text-xs leading-relaxed">
+            Custom Caddy build (<code class="text-cyan-400">ghcr.io/buildplan/cs-caddy:2.11.4</code>) bundled with the
+            CrowdSec Layer 7 bouncer and AppSec module. Handles automated Let's Encrypt TLS certificates, security
+            headers, and CLI bypass logic on port 80. Requires the CrowdSec AppSec listener on port 7422.
+          </p>
+        </div>
+        <div class="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <p class="font-semibold text-white mb-1">crowdsec</p>
+          <p class="text-zinc-400 text-xs leading-relaxed">
+            Security engine running log acquisition, AppSec WAF inspection, and a Local API (LAPI) queried by the
+            backend application to check real-time IP ban status.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Directory Structure -->
+    <section id="directory-structure" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        2. Directory Structure
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        Place all deployment configurations, database files, and persistent state within a dedicated root folder (e.g.,
+        <code class="text-cyan-400">/home/user/ipsearch</code> or <code class="text-cyan-400">/opt/ipsearch</code>). The
+        layout mirrors the volume mounts specified in Docker Compose:
+      </p>
+      <pre><code>ipsearch/
+├── caddy/
+│   ├── Caddyfile
+│   ├── config/
+│   │   └── caddy/
+│   ├── data/
+│   │   └── caddy/
+│   └── logs/
+│       ├── ip-access.log
+│       ├── ip-cli-access.log
+│       └── system-access.log
+├── crowdsec/
+│   ├── config/
+│   │   ├── acquis.d/
+│   │   │   ├── appsec.yaml
+│   │   │   └── caddy.yaml
+│   │   ├── acquis.yaml
+│   │   ├── appsec-configs/
+│   │   ├── appsec-rules/
+│   │   ├── collections/
+│   │   ├── config.yaml
+│   │   ├── profiles.yaml
+│   │   └── ...
+│   └── data/
+│       ├── crowdsec.db
+│       └── ...
+├── db_scripts/
+│   ├── .env.geolite2
+│   ├── .env_ip2db
+│   ├── .env_ip2px
+│   ├── .env.ipinfo
+│   ├── geolite2-update.sh
+│   ├── geolite2-update-asn.sh
+│   ├── ip2location-db.sh
+│   ├── ip2location-px.sh
+│   └── ipinfo-update.sh
+├── ip_dbs/
+│   ├── GeoLite2-ASN.mmdb
+│   ├── GeoLite2-City.mmdb
+│   ├── IP2LOCATION-LITE-DB11.IPV6.BIN
+│   ├── IP2PROXY-LITE-PX11.BIN
+│   └── ipinfo-asn.mmdb
+├── docker-compose.yml
+└── .env</code></pre>
+      <p class="text-zinc-300 text-sm">
+        Run the following shell command on your host server to prepare the required directory skeleton:
+      </p>
+      <pre><code>mkdir -p caddy/config caddy/data caddy/logs \
+         crowdsec/config/acquis.d crowdsec/data \
+         db_scripts ip_dbs</code></pre>
+    </section>
+
+    <!-- 3. DNS Configuration -->
+    <section id="dns-configuration" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        3. DNS Record Setup at Registrar
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        The service utilizes four distinct subdomains to accommodate standard web traffic, plain CLI commands, and
+        explicit single-stack testing for IPv4 and IPv6:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Host / Name</th>
+            <th>Record Type</th>
+            <th>Target Value</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>ipsearch.yourdomain.com</code></td>
+            <td>A</td>
+            <td><code>&lt;SERVER_IPV4&gt;</code></td>
+            <td>Dual-stack primary entry point (IPv4 resolution)</td>
+          </tr>
+          <tr>
+            <td><code>ipsearch.yourdomain.com</code></td>
+            <td>AAAA</td>
+            <td><code>&lt;SERVER_IPV6&gt;</code></td>
+            <td>Dual-stack primary entry point (IPv6 resolution)</td>
+          </tr>
+          <tr>
+            <td><code>www.ipsearch.yourdomain.com</code></td>
+            <td>A / AAAA</td>
+            <td><code>&lt;SERVER_IPV4&gt;</code> / <code>&lt;SERVER_IPV6&gt;</code></td>
+            <td>Web canonical alias pointing to primary host</td>
+          </tr>
+          <tr>
+            <td><code>ipv4.ipsearch.yourdomain.com</code></td>
+            <td>A</td>
+            <td><code>&lt;SERVER_IPV4&gt;</code></td>
+            <td>IPv4-only endpoint. Contains no AAAA record, forcing dual-stack clients to resolve exclusively over
+              IPv4.</td>
+          </tr>
+          <tr>
+            <td><code>ipv6.ipsearch.yourdomain.com</code></td>
+            <td>AAAA</td>
+            <td><code>&lt;SERVER_IPV6&gt;</code></td>
+            <td>IPv6-only endpoint. Contains no A record, forcing clients to resolve exclusively over IPv6.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="text-zinc-400 text-xs leading-relaxed">
+        Note: If managing DNS through Cloudflare, configure these entries with Proxy status set to "DNS Only" (grey
+        cloud). Proxying traffic hides the real source IP behind Cloudflare edges unless explicitly reconfigured with
+        proxy headers.
+      </p>
+    </section>
+
+    <!-- 4. Databases and Update Scripts -->
+    <section id="databases-and-scripts" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        4. Databases and Update Scripts
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        The application reads five binary databases mounted read-only at <code class="text-cyan-400">/app/db</code>
+        inside the container. The repository provides maintenance scripts inside <code
+          class="text-cyan-400">db_scripts/</code> to automate validation, staging, and atomic replacement of each
+        database:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Database File</th>
+            <th>Provider</th>
+            <th>Update Script</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>GeoLite2-City.mmdb</code></td>
+            <td>MaxMind</td>
+            <td><code>db_scripts/geolite2-update.sh</code></td>
+            <td>Provides city, country, postal code, latitude/longitude, and timezone mapping.</td>
+          </tr>
+          <tr>
+            <td><code>GeoLite2-ASN.mmdb</code></td>
+            <td>MaxMind</td>
+            <td><code>db_scripts/geolite2-update-asn.sh</code></td>
+            <td>Resolves Autonomous System Number (ASN) and organization name.</td>
+          </tr>
+          <tr>
+            <td><code>ipinfo-asn.mmdb</code></td>
+            <td>IPinfo</td>
+            <td><code>db_scripts/ipinfo-update.sh</code></td>
+            <td>Supplemental/fallback ASN intelligence file. Validated against official SHA256 API checksum.</td>
+          </tr>
+          <tr>
+            <td><code>IP2LOCATION-LITE-DB11.IPV6.BIN</code></td>
+            <td>IP2Location</td>
+            <td><code>db_scripts/ip2location-db.sh</code></td>
+            <td>Dual-stack database providing secondary ISP and geographic coordinate resolution.</td>
+          </tr>
+          <tr>
+            <td><code>IP2PROXY-LITE-PX11.BIN</code></td>
+            <td>IP2Location</td>
+            <td><code>db_scripts/ip2location-px.sh</code></td>
+            <td>Identifies proxies, VPN exit gateways, Tor nodes, and hosting/datacenter ranges.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="space-y-3 pt-2">
+        <h3 class="text-base font-semibold text-white">Configuring Script Environment Files</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          Each script reads an optional local configuration file in <code class="text-cyan-400">db_scripts/</code>. Set
+          directory permissions to <code class="text-cyan-400">chmod 600</code> on these files:
         </p>
-        <ul class="list-disc pl-5 text-zinc-400 space-y-2">
-          <li><strong>Branding:</strong> Update the logos, colors, and text in <code>views/index.html</code> and <code>public/style.css</code>.</li>
-          <li><strong>API Keys:</strong> Provide your own API keys for services like AbuseIPDB, MaxMind, SniffCat, etc., in the <code>.env</code> file or <code>docker-compose.yml</code>.</li>
-          <li><strong>Endpoints:</strong> Modify <code>server.js</code> to adjust API rate limits, caching, and custom routes.</li>
-        </ul>
-      </section>
+        <pre><code># db_scripts/.env.geolite2
+DEST_DIR="/home/user/ipsearch/ip_dbs"
+NTFY_ENABLED=false
+DISCORD_ENABLED=false
 
-      <section class="space-y-4">
-        <h2 class="text-xl font-semibold text-emerald-400">
-          2. DNS Setup
-        </h2>
-        <p class="text-zinc-300 leading-relaxed">
-          To properly host this app (including dual-stack IPv4/IPv6 support), you should set up the following DNS records pointing to your server's IP addresses:
+# db_scripts/.env.ipinfo
+DEST_DIR="/home/user/ipsearch/ip_dbs"
+IPINFO_TOKEN="your_ipinfo_api_token"
+
+# db_scripts/.env_ip2db
+DEST_DIR="/home/user/ipsearch/ip_dbs"
+IP2_TOKEN="your_ip2location_download_token"
+DB_CODE="DB11LITEBINIPV6"
+TARGET_FILE="IP2LOCATION-LITE-DB11.IPV6.BIN"
+
+# db_scripts/.env_ip2px
+DEST_DIR="/home/user/ipsearch/ip_dbs"
+IP2_TOKEN="your_ip2location_download_token"
+DB_CODE="PX11LITEBIN"
+TARGET_FILE="IP2PROXY-LITE-PX11.BIN"</code></pre>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <h3 class="text-base font-semibold text-white">Automating Updates with Cron</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          Configure periodic executions via the host system's crontab (<code class="text-cyan-400">crontab -e</code>):
         </p>
-        <ul class="list-disc pl-5 text-zinc-400 space-y-1">
-          <li><strong>A Record:</strong> <code>ipsearch.yourdomain.com</code> pointing to your server's IPv4 address.</li>
-          <li><strong>AAAA Record:</strong> <code>ipsearch.yourdomain.com</code> pointing to your server's IPv6 address.</li>
-          <li><strong>A Record:</strong> <code>ipv4.ipsearch.yourdomain.com</code> pointing ONLY to your server's IPv4 address (to force IPv4 checks).</li>
-          <li><strong>AAAA Record:</strong> <code>ipv6.ipsearch.yourdomain.com</code> pointing ONLY to your server's IPv6 address (to force IPv6 checks).</li>
-        </ul>
-      </section>
+        <pre><code># Run MaxMind and IPinfo updates every Wednesday and Saturday at 04:00
+0 4 * * 3,6 /bin/bash /home/user/ipsearch/db_scripts/geolite2-update.sh > /dev/null 2>&1
+15 4 * * 3,6 /bin/bash /home/user/ipsearch/db_scripts/geolite2-update-asn.sh > /dev/null 2>&1
+30 4 * * 3,6 /bin/bash /home/user/ipsearch/db_scripts/ipinfo-update.sh > /dev/null 2>&1
 
-      <section class="space-y-4">
-        <h2 class="text-xl font-semibold text-emerald-400">
-          3. Caddy Reverse Proxy Configuration
-        </h2>
-        <p class="text-zinc-300 leading-relaxed">
-          We recommend using Caddy as a reverse proxy. It automatically provisions SSL certificates and can integrate with CrowdSec. Here is an example <code>Caddyfile</code>:
+# Run IP2Location updates on the 2nd day of every month at 05:00
+0 5 2 * * /bin/bash /home/user/ipsearch/db_scripts/ip2location-db.sh > /dev/null 2>&1
+20 5 2 * * /bin/bash /home/user/ipsearch/db_scripts/ip2location-px.sh > /dev/null 2>&1</code></pre>
+      </div>
+
+      <div class="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs text-zinc-300">
+        <p class="font-semibold text-white mb-1">Zero-Downtime Hot-Reloading</p>
+        <p>
+          The backend engine monitors all database paths with Node.js <code class="text-cyan-400">fs.watch</code>. When
+          an update script replaces an <code class="text-cyan-400">.mmdb</code> or <code
+            class="text-cyan-400">.BIN</code> file atomically using <code class="text-cyan-400">mv</code>, the
+          application automatically loads the new file into memory within two seconds without restarting containers or
+          dropping active connections.
         </p>
-        <pre><code># --- IP Service (HTTP for CLI Tools) ---
-http://ipsearch.uk, http://ipv6.ipsearch.uk, http://ipv4.ipsearch.uk {
-        # Enable logging so CrowdSec can read the access logs!
-        log {
-                output file /var/log/caddy/ip-cli-access.log {
-                        mode 0640
-                        roll_size 5MiB
-                        roll_keep 3
-                        roll_keep_for 180h
-                }
-                format json
-        }
+      </div>
+    </section>
 
-        # 1. Route ALL port 80 traffic through CrowdSec first!
-        route {
-                crowdsec
-                appsec
-
-                # 2. Match the exact User-Agents from your server.js logic
-                @cli {
-                        header_regexp User-Agent "(?i)(curl|wget|httpie|python|powershell|aiohttp|go-http-client)"
-                }
-
-                # 3. If it's a CLI tool, proxy it directly over HTTP
-                handle @cli {
-                        reverse_proxy ipsearch:4040
-                }
-
-                # 4. For all other HTTP traffic (e.g., normal browsers), force HTTPS
-                handle {
-                        redir https://{host}{uri} permanent
-                }
-        }
-}
-
-# --- IP Service (HTTPS for Web Browsers) ---
-https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://ipv4.ipsearch.uk {
-        log {
-                output file /var/log/caddy/ip-access.log {
-                        mode 0640
-                        roll_size 5MiB
-                        roll_keep 3
-                        roll_keep_for 180h
-                }
-                format json
-        }
-
-        route {
-                crowdsec
-                appsec
-
-                import secure_headers
-                header Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://unpkg.com https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: https://*.openstreetmap.org https://server.arcgisonline.com https://www.abuseipdb.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.ipsearch.uk https://unpkg.com https://bash.ws https://*.bash.ws; worker-src 'self' blob: https://unpkg.com;"
-
-                reverse_proxy ipsearch:4040
-        }
-}</code></pre>
-      </section>
-
-      <section class="space-y-4">
-        <h2 class="text-xl font-semibold text-emerald-400">
-          4. Docker Compose Setup
-        </h2>
-        <p class="text-zinc-300 leading-relaxed">
-          You can use Docker Compose to run the app, CrowdSec, and Caddy together. Ensure you have the recommended folder structure (e.g. <code>./caddy/Caddyfile</code>, <code>./crowdsec/config</code>, etc.). Here is the suggested <code>docker-compose.yml</code>:
-        </p>
-        <pre><code>networks:
+    <!-- 5. Docker Compose Setup -->
+    <section id="docker-compose" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        5. Docker Compose Setup
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        The <code class="text-cyan-400">docker-compose.yml</code> file creates an isolated bridge network with
+        pre-allocated static IPv4 and IPv6 subnets. This guarantees deterministic IP assignments required for CrowdSec
+        bouncer authorizations:
+      </p>
+      <pre><code>networks:
   ipsearch-net:
     driver: bridge
     name: ipsearch-net
@@ -158,14 +402,14 @@ https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://
           gateway: fda1:b2c3:d4e5::1
 
 services:
-  # --- proxy ---  
+  # --- Reverse Proxy and TLS Termination ---
   caddy:
     image: ghcr.io/buildplan/cs-caddy:2.11.4
     container_name: caddy
     ports:
       - "80:80"
       - "443:443"
-      - "443:443/udp"
+      - "443:443/udp" # HTTP/3 QUIC
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./caddy/data:/data
@@ -187,9 +431,9 @@ services:
       options: { max-size: "5m", max-file: "3" }
     deploy:
       resources:
-        limits: { cpus: '0.25', memory: 512M }  
+        limits: { cpus: '0.25', memory: 512M }
 
-  # --- IP Search ---
+  # --- Application Engine ---
   ipsearch:
     image: ghcr.io/wiredalter/ipservice:latest
     container_name: ipsearch
@@ -220,7 +464,11 @@ services:
         ipv6_address: fda1:b2c3:d4e5::21
     volumes:
       - ./ip_dbs:/app/db:ro
+    deploy:
+      resources:
+        limits: { cpus: '0.50', memory: 512M }
 
+  # --- Threat Intelligence and Intrusion Prevention ---
   crowdsec:
     image: crowdsecurity/crowdsec:v1.8.1
     container_name: crowdsec
@@ -238,7 +486,7 @@ services:
       - /var/log/kern.log:/var/log/host/kern.log:ro
     environment:
       - TZ=Europe/London
-      - GID=$(id -g)
+      - GID=1000
       - COLLECTIONS=crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/caddy crowdsecurity/linux
     ports:
       - "127.0.0.1:8080:8080"
@@ -250,17 +498,513 @@ services:
       retries: 3
     logging:
       driver: "json-file"
-      options: { max-size: "5m", max-file: "3" }
-</code></pre>
-      </section>
+      options: { max-size: "5m", max-file: "3" }</code></pre>
+    </section>
 
-      <div class="pt-8 text-center">
-        <a
-          href="/"
-          class="text-zinc-400 hover:text-white underline decoration-zinc-600 underline-offset-4"
-          >← Back to IP Echo</a
-        >
+    <!-- 6. Caddyfile Configuration -->
+    <section id="caddyfile" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        6. Complete Caddyfile Configuration
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        Place this file at <code class="text-cyan-400">caddy/Caddyfile</code>. Replace <code
+          class="text-cyan-400">ipsearch.uk</code> with your registered domain name:
+      </p>
+      <pre><code># --- Global options ---
+{
+	email {env.LETSE_EMAIL}
+	admin :2019
+	metrics
+
+	log {
+		output file /var/log/caddy/system-access.log {
+			mode 0640
+			roll_size 10mb
+			roll_keep 5
+			roll_keep_for 360h
+		}
+		format json
+		level INFO
+	}
+
+	# --- CrowdSec Bouncer Configuration ---
+	crowdsec {
+		api_url http://crowdsec:8080
+		api_key {env.CROWDSEC_CADDY_API_KEY}
+		appsec_url http://crowdsec:7422
+		ticker_interval 15s
+		metrics_interval 10m
+	}
+}
+
+(secure_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+	}
+}
+
+# --- Internal Healthcheck ---
+:2020 {
+	respond "OK" 200
+}
+
+# --- IP Service (HTTP for CLI Tools) ---
+http://ipsearch.uk, http://ipv6.ipsearch.uk, http://ipv4.ipsearch.uk {
+	# Enable logging so CrowdSec can read the access logs
+	log {
+		output file /var/log/caddy/ip-cli-access.log {
+			mode 0640
+			roll_size 5MiB
+			roll_keep 3
+			roll_keep_for 180h
+		}
+		format json
+	}
+
+	# 1. Route ALL port 80 traffic through CrowdSec first
+	route {
+		crowdsec
+		appsec
+
+		# 2. Match exact User-Agents from server.js logic
+		@cli {
+			header_regexp User-Agent "(?i)(curl|wget|httpie|python|powershell|aiohttp|go-http-client)"
+		}
+
+		# 3. If it's a CLI tool, proxy directly over plain HTTP
+		handle @cli {
+			reverse_proxy ipsearch:4040
+		}
+
+		# 4. For all other HTTP traffic (e.g., standard browsers), enforce HTTPS
+		handle {
+			redir https://{host}{uri} permanent
+		}
+	}
+}
+
+# --- IP Service (HTTPS for Web Browsers) ---
+https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://ipv4.ipsearch.uk {
+	log {
+		output file /var/log/caddy/ip-access.log {
+			mode 0640
+			roll_size 5MiB
+			roll_keep 3
+			roll_keep_for 180h
+		}
+		format json
+	}
+
+	route {
+		crowdsec
+		appsec
+
+		import secure_headers
+		header Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://unpkg.com https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: https://*.openstreetmap.org https://server.arcgisonline.com https://www.abuseipdb.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.ipsearch.uk https://unpkg.com https://bash.ws https://*.bash.ws; worker-src 'self' blob: https://unpkg.com;"
+
+		reverse_proxy ipsearch:4040
+	}
+}</code></pre>
+
+      <div class="space-y-2 pt-2">
+        <h3 class="text-base font-semibold text-white">Why CLI Routing is Configured on Port 80</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          When users run commands like <code class="text-cyan-400">curl ipsearch.uk</code> or <code
+            class="text-cyan-400">wget -qO- ipsearch.uk</code>, standard web servers issue an HTTP 301/308 redirect to
+          HTTPS. CLI utilities do not follow redirects unless the user explicitly passes flags (such as <code
+            class="text-cyan-400">-L</code> with curl).
+        </p>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          By evaluating the <code class="text-cyan-400">User-Agent</code> header with regular expressions inside the
+          HTTP block, Caddy selectively serves CLI requests directly on port 80 without requiring SSL handshakes or
+          redirect loops. All standard browser traffic continues to be upgraded to HTTPS automatically.
+        </p>
       </div>
+    </section>
+
+    <!-- 7. CrowdSec and AppSec Setup -->
+    <section id="crowdsec-appsec" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        7. CrowdSec and AppSec Setup
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        The custom Caddy image (<code class="text-cyan-400">ghcr.io/buildplan/cs-caddy:2.11.4</code>) compiled with
+        CrowdSec integration contains both the Layer 7 bouncer and AppSec WAF modules. In the <code
+          class="text-cyan-400">Caddyfile</code>, the directives <code
+          class="text-cyan-400">appsec_url http://crowdsec:7422</code> and <code class="text-cyan-400">appsec</code>
+        instruct Caddy to route incoming request bodies and headers to the CrowdSec AppSec engine for real-time
+        inspection.
+      </p>
+
+      <div class="p-4 rounded-lg bg-amber-950/30 border border-amber-900/60 text-xs text-zinc-300">
+        <p class="font-semibold text-amber-400 mb-1">Critical Prerequisite: AppSec Listener Required for Caddy</p>
+        <p>
+          Caddy will fail to start or reject incoming requests if the CrowdSec AppSec listener is not active on port
+          7422. Because Caddy and CrowdSec run as distinct containers on the <code
+            class="text-cyan-400">ipsearch-net</code> bridge network, CrowdSec must bind AppSec to <code
+            class="text-cyan-400">0.0.0.0:7422</code> (not 127.0.0.1) so Caddy can reach it over the internal network.
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        <h3 class="text-base font-semibold text-white">1. AppSec Acquisition Configuration</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          Create <code class="text-cyan-400">crowdsec/config/acquis.d/appsec.yaml</code> to activate the AppSec listener
+          inside CrowdSec:
+        </p>
+        <pre><code>listen_addr: 0.0.0.0:7422
+appsec_config: crowdsecurity/appsec-default
+name: caddy-appsec
+source: appsec
+labels:
+  type: appsec</code></pre>
+      </div>
+
+      <div class="space-y-3">
+        <h3 class="text-base font-semibold text-white">2. Log Acquisition Configuration</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          Create <code class="text-cyan-400">crowdsec/config/acquis.d/caddy.yaml</code> so CrowdSec ingests the access
+          logs generated by Caddy:
+        </p>
+        <pre><code>filenames:
+  - /var/log/caddy/*.log
+labels:
+  type: caddy</code></pre>
+      </div>
+
+      <div class="space-y-3">
+        <h3 class="text-base font-semibold text-white">3. Registering Bouncers</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          Two distinct bouncers must be created using the CrowdSec command-line interface (<code
+            class="text-cyan-400">cscli</code>):
+        </p>
+
+        <div class="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white text-sm">Bouncer A: caddy-bouncer (Caddy Proxy Filter)</p>
+          <p class="text-zinc-400 text-xs">
+            Enables the Caddy reverse proxy to block banned IPs and communicate with the AppSec WAF module.
+          </p>
+          <pre><code>docker exec crowdsec cscli bouncers add caddy-bouncer</code></pre>
+          <p class="text-zinc-400 text-xs">
+            Copy the generated key and assign it to <code class="text-cyan-400">CROWDSEC_CADDY_API_KEY</code> in your
+            <code class="text-cyan-400">.env</code> file.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white text-sm">Bouncer B: ip-service (Application Reputation Check)</p>
+          <p class="text-zinc-400 text-xs">
+            Authorizes the Node.js backend to query the CrowdSec LAPI (<code
+              class="text-cyan-400">GET /v1/decisions?ip=...</code>) during IP reputation analysis.
+          </p>
+          <pre><code>docker exec crowdsec cscli bouncers add ip-service</code></pre>
+          <p class="text-zinc-400 text-xs">
+            Copy the generated key and assign it to <code class="text-cyan-400">CROWDSEC_API_KEY</code> in your <code
+              class="text-cyan-400">.env</code> file.
+          </p>
+        </div>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <h3 class="text-base font-semibold text-white">4. Verifying Registered Bouncers</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          Verify both bouncers are active and connected with valid credentials:
+        </p>
+        <pre><code>docker exec crowdsec cscli bouncers list</code></pre>
+        <p class="text-zinc-300 text-xs">Expected output format:</p>
+        <pre><code>-----------------------------------------------------------------------------------------------------------------------
+ Name           IP Address   Valid  Last API pull         Type              Version   Auth Type 
+-----------------------------------------------------------------------------------------------------------------------
+ caddy-bouncer  172.30.0.20  OK     2026-09-14T17:49:45Z  caddy-cs-bouncer  v0.14.1   api-key   
+ ip-service     172.30.0.21  OK     2026-09-14T05:19:29Z  axios             1.20.0    api-key   
+-----------------------------------------------------------------------------------------------------------------------</code></pre>
+      </div>
+    </section>
+
+    <!-- 8. Customizing and Building from Source -->
+    <section id="customizing-and-building" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        8. Customizing and Building from Source
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        If you want to modify branding, change hardcoded domain names, update policies, or remove public documentation
+        to make the service completely your own, you can clone the source repository and build a custom container image
+        locally.
+      </p>
+
+      <div class="space-y-4 text-sm text-zinc-300">
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">A. Customize Web UI and Metadata</p>
+          <ul class="list-disc pl-5 text-zinc-400 text-xs space-y-1 leading-relaxed">
+            <li><strong>Branding and Titles:</strong> Edit <code class="text-cyan-400">views/index.html</code> to
+              replace the title, meta tags, header logo, search input placeholders, and footer links.</li>
+            <li><strong>Terms and Privacy:</strong> Edit <code class="text-cyan-400">views/terms.html</code> to replace
+              company or operator names, disclaimers, and contact information.</li>
+            <li><strong>Favicons:</strong> Replace the icon set in <code class="text-cyan-400">views/favicon/</code> and
+              update <code class="text-cyan-400">site.webmanifest</code>.</li>
+          </ul>
+        </div>
+
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">B. Update Hardcoded Domain URLs and Endpoints</p>
+          <ul class="list-disc pl-5 text-zinc-400 text-xs space-y-1 leading-relaxed">
+            <li><strong>Frontend Config:</strong> In <code class="text-cyan-400">docker-compose.yml</code>, set your
+              public URLs in <code class="text-cyan-400">APP_URL</code>, <code class="text-cyan-400">V4_API_URL</code>,
+              and <code class="text-cyan-400">V6_API_URL</code>. The frontend dynamically fetches these via the <code
+                class="text-cyan-400">/api/config</code> endpoint in <code class="text-cyan-400">server.js</code>.</li>
+            <li><strong>Caddy Configuration:</strong> Replace all instances of <code
+                class="text-cyan-400">ipsearch.uk</code> in <code class="text-cyan-400">caddy/Caddyfile</code> with your
+              own domain name.</li>
+          </ul>
+        </div>
+
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">C. Optionally Remove the Self-Hosting Guide</p>
+          <p class="text-zinc-400 text-xs leading-relaxed">
+            If you do not want to expose the self-hosting guide on your public instance:
+          </p>
+          <ol class="list-decimal pl-5 text-zinc-400 text-xs space-y-1 leading-relaxed">
+            <li>Delete the file: <code class="text-cyan-400">rm views/selfhost.html</code></li>
+            <li>Remove the route in <code class="text-cyan-400">server.js</code>:
+              <pre><code>// Remove or comment out these lines:
+app.get("/selfhost", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "selfhost.html"));
+});</code></pre>
+            </li>
+            <li>Remove the "Self Host" link from the footer in <code class="text-cyan-400">views/index.html</code>.</li>
+          </ol>
+        </div>
+
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">D. Compile Tailwind CSS and Build the Local Image</p>
+          <p class="text-zinc-400 text-xs leading-relaxed">
+            The project uses Tailwind CSS via <code class="text-cyan-400">@tailwindcss/cli</code> in <code
+              class="text-cyan-400">package.json</code>. Compile styles locally or let Docker build them automatically:
+          </p>
+          <pre><code># Recompile CSS locally if making template adjustments
+npm run build:css
+
+# Build your custom Docker image
+docker build -t my-ipservice:latest .</code></pre>
+          <p class="text-zinc-400 text-xs leading-relaxed">
+            In <code class="text-cyan-400">docker-compose.yml</code>, switch the <code
+              class="text-cyan-400">ipsearch</code> service from the remote registry image to your local build:
+          </p>
+          <pre><code>  ipsearch:
+    build: .
+    image: my-ipservice:latest
+    container_name: ipsearch
+    ...</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Environment Variables -->
+    <section id="environment-variables" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        9. Environment Variables
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        Create an environment configuration file named <code class="text-cyan-400">.env</code> in the project root:
+      </p>
+      <pre><code># --- TLS / Let's Encrypt ---
+LETSE_EMAIL=admin@yourdomain.com
+ADMIN_EMAIL=admin@yourdomain.com
+
+# --- CrowdSec API Keys ---
+CROWDSEC_CADDY_API_KEY=your_generated_caddy_bouncer_key
+CROWDSEC_API_KEY=your_generated_ip_service_bouncer_key
+
+# --- External Threat Intelligence APIs (Optional) ---
+ABUSEIPDB_API_KEY=
+SNIFFCAT_API_KEY=
+SPAMVERIFY_API_KEY=
+
+# --- Service Hostnames ---
+APP_URL=https://ipsearch.yourdomain.com
+V4_API_URL=https://ipv4.ipsearch.yourdomain.com/api/info
+V6_API_URL=https://ipv6.ipsearch.yourdomain.com/api/info</code></pre>
+      <table>
+        <thead>
+          <tr>
+            <th>Variable Name</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>LETSE_EMAIL</code></td>
+            <td>Yes</td>
+            <td>Email address provided to Let's Encrypt for TLS expiration notices.</td>
+          </tr>
+          <tr>
+            <td><code>CROWDSEC_CADDY_API_KEY</code></td>
+            <td>Yes</td>
+            <td>API key generated by <code>cscli bouncers add caddy-bouncer</code>.</td>
+          </tr>
+          <tr>
+            <td><code>CROWDSEC_API_KEY</code></td>
+            <td>Yes</td>
+            <td>API key generated by <code>cscli bouncers add ip-service</code>.</td>
+          </tr>
+          <tr>
+            <td><code>ABUSEIPDB_API_KEY</code></td>
+            <td>No</td>
+            <td>Enables live reputation queries against the AbuseIPDB API.</td>
+          </tr>
+          <tr>
+            <td><code>SNIFFCAT_API_KEY</code></td>
+            <td>No</td>
+            <td>Enables VPN and proxy fraud risk evaluation through SniffCat.</td>
+          </tr>
+          <tr>
+            <td><code>SPAMVERIFY_API_KEY</code></td>
+            <td>No</td>
+            <td>Enables spam score verification through SpamVerify.</td>
+          </tr>
+          <tr>
+            <td><code>V4_API_URL</code></td>
+            <td>Yes</td>
+            <td>Full URL pointing to the IPv4-only information endpoint for client interface checks.</td>
+          </tr>
+          <tr>
+            <td><code>V6_API_URL</code></td>
+            <td>Yes</td>
+            <td>Full URL pointing to the IPv6-only information endpoint for client interface checks.</td>
+          </tr>
+          <tr>
+            <td><code>MAX_MEMORY_MB</code></td>
+            <td>No</td>
+            <td>Threshold in megabytes for the <code>/health</code> status endpoint (default: 1024).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 10. Deployment Walkthrough -->
+    <section id="deployment-walkthrough" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        10. Step-by-Step Deployment
+      </h2>
+      <div class="space-y-4 text-sm text-zinc-300">
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">Step 1: Set up directories and files</p>
+          <p class="text-zinc-400 text-xs">
+            Clone or copy the project files to your server and initialize the directory tree:
+          </p>
+          <pre><code>git clone https://github.com/wiredalter/ipservice.git ipsearch
+cd ipsearch
+mkdir -p caddy/config caddy/data caddy/logs \
+         crowdsec/config/acquis.d crowdsec/data \
+         ip_dbs</code></pre>
+        </div>
+
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">Step 2: Populate IP intelligence databases</p>
+          <p class="text-zinc-400 text-xs">
+            Configure credentials in <code class="text-cyan-400">db_scripts/</code> and execute the fetch scripts to
+            populate <code class="text-cyan-400">ip_dbs/</code>:
+          </p>
+          <pre><code>chmod +x db_scripts/*.sh
+./db_scripts/geolite2-update.sh
+./db_scripts/geolite2-update-asn.sh
+./db_scripts/ipinfo-update.sh
+./db_scripts/ip2location-db.sh
+./db_scripts/ip2location-px.sh</code></pre>
+        </div>
+
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">Step 3: Configure AppSec and start CrowdSec</p>
+          <p class="text-zinc-400 text-xs">
+            Ensure <code class="text-cyan-400">crowdsec/config/acquis.d/appsec.yaml</code> and <code
+              class="text-cyan-400">crowdsec/config/acquis.d/caddy.yaml</code> are in place, then launch CrowdSec to
+            register bouncers:
+          </p>
+          <pre><code>docker compose up -d crowdsec
+docker exec crowdsec cscli bouncers add caddy-bouncer
+docker exec crowdsec cscli bouncers add ip-service</code></pre>
+        </div>
+
+        <div class="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-2">
+          <p class="font-semibold text-white">Step 4: Configure .env and launch full stack</p>
+          <p class="text-zinc-400 text-xs">
+            Insert the bouncer keys into <code class="text-cyan-400">.env</code>, review <code
+              class="text-cyan-400">caddy/Caddyfile</code> domain names, and start all containers:
+          </p>
+          <pre><code>docker compose up -d</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Verification and Testing -->
+    <section id="verification-testing" class="space-y-4">
+      <h2 class="text-xl font-semibold text-emerald-400 border-b border-zinc-800 pb-2">
+        11. Verification and Testing
+      </h2>
+      <p class="text-zinc-300 text-sm leading-relaxed">
+        Execute the following verification requests from an external machine to confirm all proxy routes, CLI formats,
+        and dual-stack subdomains are operational:
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Plain Text IP (Port 80 CLI Route)
+          </p>
+          <pre><code>curl http://ipsearch.yourdomain.com</code></pre>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Full JSON Intelligence</p>
+          <pre><code>curl http://ipsearch.yourdomain.com/json</code></pre>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Formatted CLI Dashboard</p>
+          <pre><code>curl http://ipsearch.yourdomain.com/cli</code></pre>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Specific IP Lookup</p>
+          <pre><code>curl "http://ipsearch.yourdomain.com/json?ip=1.1.1.1"</code></pre>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Reputation Endpoint (CrowdSec /
+            Abuse Check)</p>
+          <pre><code>curl "http://ipsearch.yourdomain.com/api/reputation?ip=1.1.1.1"</code></pre>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Single-Stack Testing</p>
+          <pre><code># Force IPv4 resolution
+curl http://ipv4.ipsearch.yourdomain.com
+
+# Force IPv6 resolution
+curl http://ipv6.ipsearch.yourdomain.com</code></pre>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Container Health Status</p>
+          <pre><code>curl http://127.0.0.1:4040/health
+docker exec crowdsec cscli lapi status</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer navigation -->
+    <div class="pt-8 border-t border-zinc-800 text-center">
+      <a href="/" class="text-zinc-400 hover:text-white underline decoration-zinc-600 underline-offset-4 text-sm">
+        Back to Application
+      </a>
     </div>
-  </body>
+
+  </div>
+</body>
+
 </html>
