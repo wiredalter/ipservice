@@ -578,7 +578,10 @@ http://ipsearch.uk, http://ipv6.ipsearch.uk, http://ipv4.ipsearch.uk {
 
 		# 3. If it's a CLI tool, proxy directly over plain HTTP
 		handle @cli {
-			reverse_proxy ipsearch:4040
+			reverse_proxy ipsearch:4040 {
+				header_up -CF-Connecting-IP
+				header_up -X-Real-IP
+			}
 		}
 
 		# 4. For all other HTTP traffic (e.g., standard browsers), enforce HTTPS
@@ -607,7 +610,10 @@ https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://
 		import secure_headers
 		header Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://unpkg.com https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: https://*.openstreetmap.org https://server.arcgisonline.com https://www.abuseipdb.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.ipsearch.uk https://unpkg.com https://bash.ws https://*.bash.ws; worker-src 'self' blob: https://unpkg.com;"
 
-		reverse_proxy ipsearch:4040
+		reverse_proxy ipsearch:4040 {
+			header_up -CF-Connecting-IP
+			header_up -X-Real-IP
+		}
 	}
 }</code></pre>
 
@@ -624,6 +630,32 @@ https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://
           HTTP block, Caddy selectively serves CLI requests directly on port 80 without requiring SSL handshakes or
           redirect loops. All standard browser traffic continues to be upgraded to HTTPS automatically.
         </p>
+      </div>
+      <div class="space-y-2 pt-6">
+        <h3 class="text-base font-semibold text-white">Using Cloudflare Proxy (Orange Cloud)</h3>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          If you run this service behind Cloudflare's proxy network, the backend relies on the <code class="text-cyan-400">CF-Connecting-IP</code> header to determine the user's real IP address.
+        </p>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          In the <code class="text-cyan-400">Caddyfile</code> template above, we aggressively strip <code class="text-cyan-400">CF-Connecting-IP</code> to prevent IP spoofing attacks. 
+          If you are using Cloudflare, you must <strong>remove</strong> the <code class="text-cyan-400">header_up -CF-Connecting-IP</code> directives from your <code class="text-cyan-400">reverse_proxy</code> blocks.
+        </p>
+        <p class="text-zinc-300 text-sm leading-relaxed">
+          <strong>Security Warning:</strong> If you allow the <code class="text-cyan-400">CF-Connecting-IP</code> header, you <em>must</em> ensure attackers cannot connect to your Caddy server directly to spoof it. You should configure your server's firewall (ufw/iptables) to only accept incoming connections on ports 80 and 443 from <a href="https://www.cloudflare.com/ips/" target="_blank" class="text-emerald-400 hover:underline">Cloudflare's official IP ranges</a>. Alternatively, you can drop non-Cloudflare traffic directly within your <code class="text-cyan-400">Caddyfile</code> like this:
+        </p>
+        <pre><code>@cloudflare {
+    # Cloudflare's IPv4 ranges
+    remote_ip 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22
+}
+
+handle @cloudflare {
+    reverse_proxy ipsearch:4040
+}
+
+# Drop any requests that didn't come through Cloudflare
+handle {
+    abort
+}</code></pre>
       </div>
     </section>
 
