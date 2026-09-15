@@ -246,6 +246,7 @@ app.get("/cli", async (req, res) => {
 
   Organization : ${show(data.org)}
   ASN          : ${show(data.asn)}
+  Network CIDR : ${show(data.network)}
 
   Connection   : ${show(data.usage_type)}
   Risk Status  : ${show(data.proxy_type)}

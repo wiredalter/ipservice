@@ -162,6 +162,11 @@ function getGeoData(ip) {
         ? ipinfoData.asn
         : "Unknown";
 
+    let networkCidr = "N/A";
+    if (asnData && asnData.network) networkCidr = asnData.network;
+    else if (ipinfoData && ipinfoData.route) networkCidr = ipinfoData.route;
+    else if (ipinfoData && ipinfoData.network) networkCidr = ipinfoData.network;
+
     // DB11 Fallback
     const db11Data = db11Lookup ? db11Lookup.getAll(ip) : {};
 
@@ -339,6 +344,7 @@ function getGeoData(ip) {
       zip: finalZip,
       asn: asnNumber,
       org: orgName,
+      network: networkCidr,
       is_proxy: isProxy,
       proxy_type: riskLabel,
       usage_type: usageType,
