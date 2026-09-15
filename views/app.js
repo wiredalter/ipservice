@@ -344,6 +344,13 @@ function populateDetails(data) {
   document.getElementById("dataOrg").innerText = data.org || "N/A";
   document.getElementById("dataAsn").innerText = data.asn || "N/A";
 
+  if (data.network && data.network !== "N/A") {
+    document.getElementById("dataNetwork").innerText = data.network;
+    document.getElementById("networkWrapper").classList.remove("hidden");
+  } else {
+    document.getElementById("networkWrapper").classList.add("hidden");
+  }
+
   if (data.hostname && data.hostname !== "N/A") {
     document.getElementById("dataHostname").innerText = data.hostname;
     document.getElementById("hostnameWrapper").classList.remove("hidden");
@@ -384,6 +391,31 @@ function populateDetails(data) {
     proxyEl.innerText = data.usage_type || "Clean";
     proxyEl.className =
       "px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+  }
+
+  // Provider
+  const providerRow = document.getElementById("providerRow");
+  const dataProvider = document.getElementById("dataProvider");
+  if (data.provider && data.provider !== "N/A" && data.provider !== "-") {
+    dataProvider.innerText = data.provider;
+    providerRow.style.display = "flex";
+  } else {
+    providerRow.style.display = "none";
+  }
+
+  // Threat
+  const threatRow = document.getElementById("threatRow");
+  const dataThreat = document.getElementById("dataThreat");
+  if (data.threat && data.threat !== "None" && data.threat !== "-") {
+    dataThreat.innerText = data.threat;
+    threatRow.style.display = "flex";
+    if (data.threat.includes("High") || data.threat.includes("SPAM") || data.threat.includes("SCANNER")) {
+      dataThreat.className = "text-sm font-bold text-red-600 dark:text-red-400";
+    } else {
+      dataThreat.className = "text-sm font-medium text-orange-600 dark:text-orange-400";
+    }
+  } else {
+    threatRow.style.display = "none";
   }
 
   if (data.latitude && data.longitude) {

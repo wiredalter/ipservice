@@ -265,6 +265,13 @@
           <div class="text-xs text-zinc-500 font-mono mt-1" id="dataAsn">
             ...
           </div>
+          <div id="networkWrapper" class="pt-3 mt-3 border-t border-zinc-200 dark:border-zinc-800/60 hidden">
+            <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+              Network
+            </div>
+            <div id="dataNetwork" class="text-xs font-mono text-zinc-600 dark:text-zinc-400 break-all leading-relaxed">
+            </div>
+          </div>
           <div id="hostnameWrapper" class="pt-3 mt-3 border-t border-zinc-200 dark:border-zinc-800/60 hidden">
             <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
               Reverse DNS
@@ -327,6 +334,14 @@
           <span
             class="px-2 py-0.5 rounded text-xs font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
             id="dataProxyBadge">Checking...</span>
+        </div>
+        <div class="flex justify-between items-center py-2 border-b border-zinc-200 dark:border-zinc-800/60" id="providerRow" style="display: none;">
+          <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Provider</span>
+          <span class="text-sm font-medium text-zinc-800 dark:text-zinc-300" id="dataProvider">N/A</span>
+        </div>
+        <div class="flex justify-between items-center py-2 border-b border-zinc-200 dark:border-zinc-800/60" id="threatRow" style="display: none;">
+          <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Threat Type</span>
+          <span class="text-sm font-medium text-zinc-800 dark:text-zinc-300" id="dataThreat">None</span>
         </div>
         <div id="reputation-section" class="pt-2">
           <div class="flex justify-between items-center mb-3">
