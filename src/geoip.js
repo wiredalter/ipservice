@@ -146,7 +146,19 @@ function getGeoData(ip) {
   try {
     // --- DATA LOOKUPS ---
     const cityData = cityLookup ? cityLookup.get(ip) : null;
-    const asnData = asnLookup ? asnLookup.get(ip) : null;
+    let asnData = null;
+    let asnPrefix = null;
+    if (asnLookup) {
+      if (typeof asnLookup.getWithPrefixLength === 'function') {
+        const result = asnLookup.getWithPrefixLength(ip);
+        if (result) {
+          asnData = result[0];
+          asnPrefix = result[1];
+        }
+      } else {
+        asnData = asnLookup.get(ip);
+      }
+    }
     const proxyData = proxyLookup ? proxyLookup.getAll(ip) : {};
     const ipinfoData = ipinfoAsnLookup ? ipinfoAsnLookup.get(ip) : null;
 
@@ -163,9 +175,24 @@ function getGeoData(ip) {
         : "Unknown";
 
     let networkCidr = "N/A";
-    if (asnData && asnData.network) networkCidr = asnData.network;
+    if (cityData && cityData.traits && cityData.traits.network) networkCidr = cityData.traits.network;
+    else if (asnData && asnData.network) networkCidr = asnData.network;
     else if (ipinfoData && ipinfoData.route) networkCidr = ipinfoData.route;
     else if (ipinfoData && ipinfoData.network) networkCidr = ipinfoData.network;
+    else if (asnPrefix !== null) {
+      if (ip.includes(":")) {
+        networkCidr = `${ip}/${asnPrefix}`; // IPv6 approx
+      } else {
+        // basic IPv4 cidr masking
+        const parts = ip.split('.').map(Number);
+        const shift = 32 - asnPrefix;
+        const ipInt = ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+        const mask = (~0 << shift) >>> 0;
+        const baseInt = (ipInt & mask) >>> 0;
+        const baseIp = [ (baseInt >>> 24) & 255, (baseInt >>> 16) & 255, (baseInt >>> 8) & 255, baseInt & 255 ].join('.');
+        networkCidr = `${baseIp}/${asnPrefix}`;
+      }
+    }
 
     // DB11 Fallback
     const db11Data = db11Lookup ? db11Lookup.getAll(ip) : {};
@@ -305,21 +332,21 @@ function getGeoData(ip) {
 
     if (!hasCityDataCity && hasDb11DataCity) {
       // Use DB11 entirely for location to avoid mixing different providers' data
-      finalCountry = db11Data.country_long;
-      finalCountryCode = db11Data.country_short;
+      finalCountry = db11Data.countryLong;
+      finalCountryCode = db11Data.countryShort;
       finalCity = db11Data.city;
       finalRegion = db11Data.region;
-      finalTimezone = db11Data.time_zone;
+      finalTimezone = db11Data.timeZone;
       lat = parseFloat(db11Data.latitude) || 0;
       long = parseFloat(db11Data.longitude) || 0;
-      finalZip = db11Data.zip_code && db11Data.zip_code !== "-" && db11Data.zip_code !== "This parameter is unavailable for selected data file." ? db11Data.zip_code : "N/A";
+      finalZip = db11Data.zipCode && db11Data.zipCode !== "-" && db11Data.zipCode !== "This parameter is unavailable for selected data file." ? db11Data.zipCode : "N/A";
     } else {
       // Use CityData (MaxMind) primarily, with DB11 as fallback
-      finalCountry = pick(cityData?.country?.names?.en, db11Data.country_long);
-      finalCountryCode = pick(cityData?.country?.iso_code, db11Data.country_short);
+      finalCountry = pick(cityData?.country?.names?.en, db11Data.countryLong);
+      finalCountryCode = pick(cityData?.country?.iso_code, db11Data.countryShort);
       finalCity = pick(cityData?.city?.names?.en, db11Data.city);
       finalRegion = pick(cityData?.subdivisions?.[0]?.names?.en, db11Data.region);
-      finalTimezone = pick(cityData?.location?.time_zone, db11Data.time_zone);
+      finalTimezone = pick(cityData?.location?.time_zone, db11Data.timeZone);
 
       lat = cityData?.location?.latitude || 0;
       long = cityData?.location?.longitude || 0;
@@ -328,7 +355,7 @@ function getGeoData(ip) {
         long = parseFloat(db11Data.longitude) || 0;
       }
 
-      finalZip = db11Data.zip_code && db11Data.zip_code !== "-" && db11Data.zip_code !== "This parameter is unavailable for selected data file." ? db11Data.zip_code : "N/A";
+      finalZip = db11Data.zipCode && db11Data.zipCode !== "-" && db11Data.zipCode !== "This parameter is unavailable for selected data file." ? db11Data.zipCode : "N/A";
     }
 
     return {
