@@ -291,28 +291,52 @@ function getGeoData(ip) {
     }
 
     // --- FINAL MERGE ---
-    let lat = cityData?.location?.latitude || 0;
-    let long = cityData?.location?.longitude || 0;
+    const cityDataCity = cityData?.city?.names?.en;
+    const db11DataCity = db11Data.city;
+    const hasCityDataCity = cityDataCity && cityDataCity !== "Unknown" && cityDataCity !== "";
+    const hasDb11DataCity = db11DataCity && db11DataCity !== "-" && db11DataCity !== "This parameter is unavailable for selected data file." && db11DataCity !== "Unknown" && db11DataCity !== "";
 
-    if (lat === 0 && db11Data.latitude && db11Data.latitude !== "0.000000") {
-      lat = parseFloat(db11Data.latitude);
-      long = parseFloat(db11Data.longitude);
+    let finalCountry, finalCountryCode, finalCity, finalRegion, finalTimezone, lat, long, finalZip;
+
+    if (!hasCityDataCity && hasDb11DataCity) {
+      // Use DB11 entirely for location to avoid mixing different providers' data
+      finalCountry = db11Data.country_long;
+      finalCountryCode = db11Data.country_short;
+      finalCity = db11Data.city;
+      finalRegion = db11Data.region;
+      finalTimezone = db11Data.time_zone;
+      lat = parseFloat(db11Data.latitude) || 0;
+      long = parseFloat(db11Data.longitude) || 0;
+      finalZip = db11Data.zip_code && db11Data.zip_code !== "-" && db11Data.zip_code !== "This parameter is unavailable for selected data file." ? db11Data.zip_code : "N/A";
+    } else {
+      // Use CityData (MaxMind) primarily, with DB11 as fallback
+      finalCountry = pick(cityData?.country?.names?.en, db11Data.country_long);
+      finalCountryCode = pick(cityData?.country?.iso_code, db11Data.country_short);
+      finalCity = pick(cityData?.city?.names?.en, db11Data.city);
+      finalRegion = pick(cityData?.subdivisions?.[0]?.names?.en, db11Data.region);
+      finalTimezone = pick(cityData?.location?.time_zone, db11Data.time_zone);
+
+      lat = cityData?.location?.latitude || 0;
+      long = cityData?.location?.longitude || 0;
+      if (lat === 0 && db11Data.latitude && db11Data.latitude !== "0.000000") {
+        lat = parseFloat(db11Data.latitude) || 0;
+        long = parseFloat(db11Data.longitude) || 0;
+      }
+
+      finalZip = db11Data.zip_code && db11Data.zip_code !== "-" && db11Data.zip_code !== "This parameter is unavailable for selected data file." ? db11Data.zip_code : "N/A";
     }
 
     return {
       ip,
-      country: pick(cityData?.country?.names?.en, db11Data.country_long),
-      country_code: pick(cityData?.country?.iso_code, db11Data.country_short),
-      city: pick(cityData?.city?.names?.en, db11Data.city),
-      region: pick(cityData?.subdivisions?.[0]?.names?.en, db11Data.region),
-      timezone: pick(cityData?.location?.time_zone, db11Data.time_zone),
+      country: finalCountry,
+      country_code: finalCountryCode,
+      city: finalCity,
+      region: finalRegion,
+      timezone: finalTimezone,
       coordinates: `${lat}, ${long}`,
       latitude: lat,
       longitude: long,
-      zip:
-        db11Data.zip_code && db11Data.zip_code !== "-"
-          ? db11Data.zip_code
-          : "N/A",
+      zip: finalZip,
       asn: asnNumber,
       org: orgName,
       is_proxy: isProxy,
