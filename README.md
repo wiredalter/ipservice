@@ -94,7 +94,7 @@ These can be fetched and updated automatically using the maintenance scripts in 
 
 ### Deployment
 
-For a production deployment using Caddy, CrowdSec, automated database updates, and dual-stack IPv4/IPv6 support, refer to the full [Self-Hosting Guide](views/selfhost.html) or visit `/selfhost` on your instance.
+For a production deployment using Caddy, CrowdSec, automated database updates, and dual-stack IPv4/IPv6 support, refer to the full [Self-Hosting Guide](/selfhost.md) or visit `/selfhost` on your instance.
 
 A production `docker-compose.yml` integrates the application with Caddy (`ghcr.io/buildplan/cs-caddy:2.11.4`) and CrowdSec (`crowdsecurity/crowdsec:v1.8.1`). Run:
 
