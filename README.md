@@ -73,14 +73,14 @@ curl "ipsearch.uk/json?ip=8.8.8.8"
 
 ### Prerequisites
 
-1. **Clone the repository:**
+* **Clone the repository:**
 
 ```bash
 git clone https://github.com/wiredalter/ipservice.git
 cd ipservice
 ```
 
-2. **Download Databases:**
+* **Download Databases:**
 
 The service requires the following database files in the `ip_dbs/` directory:
 
@@ -105,7 +105,7 @@ docker compose up -d
 ## Environment Variables
 
 | Variable | Required | Description |
-|---|---|---|
+| -------- | -------- | ----------- |
 | `PORT` | No | Port to listen on (default: `4040`) |
 | `ABUSEIPDB_API_KEY` | No | Enables AbuseIPDB reputation checks |
 | `CROWDSEC_API_KEY` | No | Enables CrowdSec threat intelligence |
