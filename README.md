@@ -73,14 +73,14 @@ curl "ipsearch.uk/json?ip=8.8.8.8"
 
 ### Prerequisites
 
-1. **Clone the repository:**
+* **Clone the repository:**
 
 ```bash
 git clone https://github.com/wiredalter/ipservice.git
 cd ipservice
 ```
 
-2. **Download Databases:**
+* **Download Databases:**
 
 The service requires the following database files in the `ip_dbs/` directory:
 
@@ -94,7 +94,7 @@ These can be fetched and updated automatically using the maintenance scripts in 
 
 ### Deployment
 
-For a production deployment using Caddy, CrowdSec, automated database updates, and dual-stack IPv4/IPv6 support, refer to the full [Self-Hosting Guide](views/selfhost.html) or visit `/selfhost` on your instance.
+For a production deployment using Caddy, CrowdSec, automated database updates, and dual-stack IPv4/IPv6 support, refer to the full [Self-Hosting Guide](/selfhost.md) or visit `/selfhost` on your instance.
 
 A production `docker-compose.yml` integrates the application with Caddy (`ghcr.io/buildplan/cs-caddy:2.11.4`) and CrowdSec (`crowdsecurity/crowdsec:v1.8.1`). Run:
 
@@ -105,7 +105,7 @@ docker compose up -d
 ## Environment Variables
 
 | Variable | Required | Description |
-|---|---|---|
+| -------- | -------- | ----------- |
 | `PORT` | No | Port to listen on (default: `4040`) |
 | `ABUSEIPDB_API_KEY` | No | Enables AbuseIPDB reputation checks |
 | `CROWDSEC_API_KEY` | No | Enables CrowdSec threat intelligence |
