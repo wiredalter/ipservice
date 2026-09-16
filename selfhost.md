@@ -18,7 +18,7 @@ Custom Caddy build (`ghcr.io/buildplan/cs-caddy:2.11.4`) bundled with the CrowdS
 
 Security engine running log acquisition, AppSec WAF inspection, and a Local API (LAPI) queried by the backend application to check real-time IP ban status.
 
-## Directory Structure
+### Directory Structure
 
 Place all deployment configurations, database files, and persistent state within a dedicated root folder (e.g., `/home/user/ipsearch` or `/opt/ipsearch`). The layout mirrors the volume mounts specified in Docker Compose:
 
@@ -77,7 +77,7 @@ crowdsec/config/acquis.d crowdsec/data \
 db_scripts ip_dbs
 ```
 
-## DNS Record Setup at Registrar
+### DNS Record Setup at Registrar
 
 The service utilizes four distinct subdomains to accommodate standard web traffic, plain CLI commands, and explicit single-stack testing for IPv4 and IPv6:
 
@@ -91,7 +91,7 @@ The service utilizes four distinct subdomains to accommodate standard web traffi
 
 Note: If managing DNS through Cloudflare, configure these entries with Proxy status set to "DNS Only" (grey cloud). Proxying traffic hides the real source IP behind Cloudflare edges unless explicitly reconfigured with proxy headers.
 
-## Databases and Update Scripts
+### Databases and Update Scripts
 
 The application reads five binary databases mounted read-only at `/app/db` inside the container. The repository provides maintenance scripts inside `db_scripts/` to automate validation, staging, and atomic replacement of each database:
 
@@ -103,7 +103,7 @@ The application reads five binary databases mounted read-only at `/app/db` insid
 | `IP2LOCATION-LITE-DB11.IPV6.BIN` | IP2Location | `db_scripts/ip2location-db.sh`      | Dual-stack database providing secondary ISP and geographic coordinate resolution.            |
 | `IP2PROXY-LITE-PX11.BIN`         | IP2Location | `db_scripts/ip2location-px.sh`      | Identifies proxies, VPN exit gateways, Tor nodes, and hosting/datacenter ranges.             |
 
-### Configuring Script Environment Files
+#### Configuring Script Environment Files
 
 Each script reads an optional local configuration file in `db_scripts/`. Set directory permissions to `chmod 600` on these files:
 
@@ -130,7 +130,7 @@ Each script reads an optional local configuration file in `db_scripts/`. Set dir
   TARGET_FILE="IP2PROXY-LITE-PX11.BIN"
   ```
 
-### Automating Updates with Cron
+#### Automating Updates with Cron
 
 Configure periodic executions via the host system's crontab (`crontab -e`):
 
@@ -145,11 +145,11 @@ Configure periodic executions via the host system's crontab (`crontab -e`):
   20 5 2 * * /bin/bash /home/user/ipsearch/db_scripts/ip2location-px.sh > /dev/null 2>&1
   ```
 
-## Zero-Downtime Hot-Reloading
+#### Zero-Downtime Hot-Reloading
 
 The backend engine monitors all database paths with Node.js `fs.watch`. When an update script replaces an `.mmdb` or `.BIN` file atomically using `mv`, the application automatically loads the new file into memory within two seconds without restarting containers or dropping active connections.
 
-## Docker Compose Setup
+### Docker Compose Setup
 
 The `docker-compose.yml` file creates an isolated bridge network with pre-allocated static IPv4 and IPv6 subnets. This guarantees deterministic IP assignments required for CrowdSec bouncer authorizations:
 
@@ -266,7 +266,7 @@ The `docker-compose.yml` file creates an isolated bridge network with pre-alloca
         options: { max-size: "5m", max-file: "3" }
   ```
 
-## Complete Caddyfile Configuration
+### Complete Caddyfile Configuration
 
 Place this file at `caddy/Caddyfile`. Replace `ipsearch.uk` with your registered domain name:
 
@@ -378,13 +378,13 @@ https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://
 }
 ```
 
-### Why CLI Routing is Configured on Port 80
+#### Why CLI Routing is Configured on Port 80
 
 When users run commands like `curl ipsearch.uk` or `wget -qO- ipsearch.uk`, standard web servers issue an HTTP 301/308 redirect to HTTPS. CLI utilities do not follow redirects unless the user explicitly passes flags (such as `-L` with curl).
 
 By evaluating the `User-Agent` header with regular expressions inside the HTTP block, Caddy selectively serves CLI requests directly on port 80 without requiring SSL handshakes or redirect loops. All standard browser traffic continues to be upgraded to HTTPS automatically.
 
-### Using Cloudflare Proxy (Orange Cloud)
+#### Using Cloudflare Proxy (Orange Cloud)
 
 If you run this service behind Cloudflare's proxy network, the backend relies on the `CF-Connecting-IP` header to determine the user's real IP address.
 
@@ -408,15 +408,15 @@ In the `Caddyfile` template above, we aggressively strip `CF-Connecting-IP` to p
   }
 ```
 
-## CrowdSec and AppSec Setup
+### CrowdSec and AppSec Setup
 
 The custom Caddy image (`ghcr.io/buildplan/cs-caddy:2.11.4`) compiled with CrowdSec integration contains both the Layer 7 bouncer and AppSec WAF modules. In the `Caddyfile`, the directives `appsec_url http://crowdsec:7422` and `appsec` instruct Caddy to route incoming request bodies and headers to the CrowdSec AppSec engine for real-time inspection.
 
-Critical Prerequisite: AppSec Listener Required for Caddy
+#### Critical Prerequisite: AppSec Listener Required for Caddy
 
 Caddy will fail to start or reject incoming requests if the CrowdSec AppSec listener is not active on port 7422. Because Caddy and CrowdSec run as distinct containers on the `ipsearch-net` bridge network, CrowdSec must bind AppSec to `0.0.0.0:7422` (not 127.0.0.1) so Caddy can reach it over the internal network.
 
-### AppSec Acquisition Configuration
+#### AppSec Acquisition Configuration
 
 Create `crowdsec/config/acquis.d/appsec.yaml` to activate the AppSec listener inside CrowdSec:
 
@@ -429,7 +429,7 @@ labels:
 type: appsec
 ```
 
-### Log Acquisition Configuration
+#### Log Acquisition Configuration
 
 Create `crowdsec/config/acquis.d/caddy.yaml` so CrowdSec ingests the access logs generated by Caddy:
 
@@ -440,7 +440,7 @@ labels:
 type: caddy
 ```
 
-### Registering Bouncers
+#### Registering Bouncers
 
 Two distinct bouncers must be created using the CrowdSec command-line interface (`cscli`):
 
@@ -464,7 +464,7 @@ docker exec crowdsec cscli bouncers add ip-service
 
 Copy the generated key and assign it to `CROWDSEC_API_KEY` in your `.env` file.
 
-### Verifying Registered Bouncers
+#### Verifying Registered Bouncers
 
 Verify both bouncers are active and connected with valid credentials:
 
@@ -574,7 +574,7 @@ V6_API_URL=https://ipv6.ipsearch.yourdomain.com/api/info
 
 ## Step-by-Step Deployment
 
-Step 1: Set up directories and files
+### Step 1: Set up directories and files
 
 Clone or copy the project files to your server and initialize the directory tree:
 
@@ -617,11 +617,11 @@ Insert the bouncer keys into `.env`, review `caddy/Caddyfile` domain names, and 
 docker compose up -d
 ```
 
-## Verification and Testing
+### Verification and Testing
 
 Execute the following verification requests from an external machine to confirm all proxy routes, CLI formats, and dual-stack subdomains are operational:
 
-### Plain Text IP (Port 80 CLI Route)
+#### Plain Text IP (Port 80 CLI Route)
 
 ```bash
 curl http://ipsearch.yourdomain.com
@@ -645,13 +645,13 @@ curl http://ipsearch.yourdomain.com/cli
 curl "http://ipsearch.yourdomain.com/json?ip=1.1.1.1"
 ```
 
-### Reputation Endpoint (CrowdSec / Abuse Check)
+#### Reputation Endpoint (CrowdSec / Abuse Check)
 
 ```bash
 curl "http://ipsearch.yourdomain.com/api/reputation?ip=1.1.1.1"
 ```
 
-### Single-Stack Testing
+#### Single-Stack Testing
 
 ```bash
 # Force IPv4 resolution
@@ -661,7 +661,7 @@ curl http://ipv4.ipsearch.yourdomain.com
 curl http://ipv6.ipsearch.yourdomain.com
 ```
 
-### Container Health Status
+#### Container Health Status
 
 ```bash
 curl http://127.0.0.1:4040/health
