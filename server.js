@@ -38,9 +38,12 @@ function getClientIp(req) {
     req.headers["cf-connecting-ip"] ||
     req.headers["x-real-ip"] ||
     req.ip ||
-    req.socket.remoteAddress;
-  if (ip && ip.startsWith("::ffff:")) ip = ip.substring(7);
-  return ip;
+    (req.headers["x-forwarded-for"]
+      ? req.headers["x-forwarded-for"].split(",")[0].trim()
+      : req.socket?.remoteAddress);
+  if (Array.isArray(ip)) ip = ip[0];
+  if (typeof ip === "string" && ip.startsWith("::ffff:")) ip = ip.substring(7);
+  return typeof ip === "string" ? ip : "";
 }
 
 function isCli(userAgent) {
