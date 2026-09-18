@@ -6,21 +6,64 @@ const fs = require("fs");
 const { vpnHostingProviders, vpnASNs } = require("./providers.js");
 
 // --- DATABASE PATHS ---
+function getDbPath(envVar, defaultFilename, fallbackCandidate) {
+  if (envVar) return envVar;
+  const basePath = path.join(__dirname, "..", "db");
+  const defaultPath = path.join(basePath, defaultFilename);
+  if (fs.existsSync(defaultPath)) return defaultPath;
+  if (fallbackCandidate) {
+    const candidatePath = path.join(basePath, fallbackCandidate);
+    if (fs.existsSync(candidatePath)) return candidatePath;
+  }
+  return defaultPath;
+}
+
 const cityDbPath =
   process.env.CITY_DB_PATH ||
   path.join(__dirname, "..", "db", "GeoLite2-City.mmdb");
 const asnDbPath =
   process.env.ASN_DB_PATH ||
   path.join(__dirname, "..", "db", "GeoLite2-ASN.mmdb");
-const proxyDbPath =
-  process.env.PROXY_DB_PATH ||
-  path.join(__dirname, "..", "db", "IP2PROXY-LITE-PX11.BIN");
-const db11Path =
-  process.env.DB11_PATH ||
-  path.join(__dirname, "..", "db", "IP2LOCATION-LITE-DB11.IPV6.BIN");
+const proxyDbPath = getDbPath(
+  process.env.PROXY_DB_PATH,
+  "IP2PROXY-LITE-PX11.BIN",
+  "IP2PROXY-LITE-PX11.IPV6.BIN",
+);
+const db11Path = getDbPath(
+  process.env.DB11_PATH,
+  "IP2LOCATION-LITE-DB11.IPV6.BIN",
+  "IP2LOCATION-LITE-DB11.BIN",
+);
 const ipinfoAsnDbPath =
   process.env.IPINFO_ASN_DB_PATH ||
   path.join(__dirname, "..", "db", "ipinfo-asn.mmdb");
+
+function cleanValue(val) {
+  if (!val || typeof val !== "string") return null;
+  const trimmed = val.trim();
+  if (
+    !trimmed ||
+    trimmed === "-" ||
+    trimmed === "?" ||
+    trimmed === "N/A" ||
+    trimmed === "RP" ||
+    trimmed === "Unknown"
+  ) {
+    return null;
+  }
+  const upper = trimmed.toUpperCase();
+  if (
+    upper.includes("INVALID IP") ||
+    upper.includes("MISSING FILE") ||
+    upper.includes("NOT SUPPORTED") ||
+    upper.includes("IPV6 ADDRESS MISSING") ||
+    upper.includes("UNAVAILABLE") ||
+    upper.includes("INCORRECT IP2PROXY")
+  ) {
+    return null;
+  }
+  return trimmed;
+}
 
 let cityLookup, asnLookup, proxyLookup, db11Lookup, ipinfoAsnLookup;
 
@@ -113,6 +156,29 @@ async function initGeoDb() {
 }
 
 function getGeoData(ip) {
+  if (typeof ip !== "string") {
+    return {
+      ip: String(ip || ""),
+      country: "Unknown",
+      country_code: "XX",
+      city: "Unknown",
+      region: "Unknown",
+      timezone: "Unknown",
+      coordinates: "0, 0",
+      latitude: 0,
+      longitude: 0,
+      zip: "N/A",
+      asn: "Unknown",
+      org: "Unknown",
+      network: "N/A",
+      is_proxy: false,
+      proxy_type: "No",
+      usage_type: "Standard ISP",
+      threat: "None",
+      provider: "N/A",
+    };
+  }
+
   // 1. Reserved / Local / Docker IP Checks
   const isLocal =
     ip === "::1" ||
@@ -209,11 +275,14 @@ function getGeoData(ip) {
       return "Unknown";
     };
 
+    // --- SANITIZE IP2PROXY DATA ---
+    const rawProxyType = cleanValue(proxyData.proxyType);
+    const rawUsage = cleanValue(proxyData.usageType);
+    const rawThreat = cleanValue(proxyData.threat);
+    const rawProvider = cleanValue(proxyData.provider);
+    const rawIsProxy = proxyData.isProxy === 1 || proxyData.isProxy === 2;
+
     // --- USAGE TYPE DETECTION ---
-    let rawUsage = proxyData.usageType;
-    if (!rawUsage || rawUsage === "-" || rawUsage === "RP") {
-      rawUsage = "Standard";
-    }
     const usageMap = {
       ISP: "Residential",
       MOB: "Mobile Data",
@@ -224,9 +293,32 @@ function getGeoData(ip) {
       DCH: "Datacenter",
       CDN: "CDN",
       SES: "Search Engine Spider",
-      Standard: "Standard ISP",
     };
-    let usageType = usageMap[rawUsage] || rawUsage;
+
+    let usageType = null;
+    if (rawUsage && usageMap[rawUsage]) {
+      usageType = usageMap[rawUsage];
+    } else if (rawUsage && rawUsage !== "Standard" && rawUsage !== "Standard ISP") {
+      usageType = rawUsage;
+    }
+
+    // Fallback: Check IPinfo ASN classification if usageType is still unknown
+    if (!usageType && ipinfoData && ipinfoData.type) {
+      const ipinfoTypeMap = {
+        isp: "Residential",
+        hosting: "Datacenter",
+        business: "Commercial",
+        education: "University",
+      };
+      if (ipinfoTypeMap[ipinfoData.type]) {
+        usageType = ipinfoTypeMap[ipinfoData.type];
+      }
+    }
+
+    // Default if still unknown
+    if (!usageType) {
+      usageType = "Standard ISP";
+    }
 
     // If it's a "Standard ISP" (unknown) but matches a Cloud Provider, rename it.
     if (usageType === "Standard ISP") {
@@ -244,26 +336,33 @@ function getGeoData(ip) {
     let riskLabel = "No";
 
     // A) Check Database First (IP2Proxy LITE)
-    if (proxyData && proxyData.isProxy === 1) {
-      isProxy = true;
+    if (rawIsProxy && rawProxyType) {
       const typeMap = {
         VPN: "VPN Service",
         DCH: "Datacenter",
         TOR: "Tor Node",
         PUB: "Public Proxy",
+        WEB: "Web Proxy",
         SES: "Search Engine Spider",
+        RES: "Residential Proxy",
+        CPX: "Consumer Privacy Network",
+        EPX: "Enterprise Proxy",
       };
-      riskLabel = typeMap[proxyData.proxyType] || proxyData.proxyType;
+      // WAP (Wireless Access Point) is not considered a proxy risk
+      if (rawProxyType !== "WAP") {
+        isProxy = true;
+        riskLabel = typeMap[rawProxyType] || rawProxyType;
+      }
     }
 
-    // B) Check IPinfo ASN Database
+    // B) Check IPinfo ASN Database (Hosting / Cloud)
     if (!isProxy && ipinfoData && ipinfoData.type === "hosting") {
       isProxy = true;
       riskLabel = "Cloud/VPS Provider";
       usageType = "Datacenter";
     }
 
-    // C) Fallback: Check Provider Lists
+    // C) Fallback: Check Provider Lists against orgName
     if (!isProxy && orgName !== "Unknown ISP") {
       if (
         vpnHostingProviders.high.some((p) =>
@@ -302,23 +401,25 @@ function getGeoData(ip) {
     }
 
     // --- THREAT & PROVIDER SANITIZATION ---
-    let threat = proxyData.threat || "-";
-    let provider = proxyData.provider || "-";
-
-    if (threat === "-") threat = "None";
-    if (provider === "-") provider = "N/A";
+    let threat = "None";
+    let provider = "N/A";
 
     if (isProxy && riskLabel !== "No") {
-      if (usageType === "Standard ISP" || usageType === "Standard")
+      if (usageType === "Standard ISP" || usageType === "Standard") {
         usageType = "Datacenter";
-      if (provider === "N/A") provider = orgName;
+      }
+      provider = rawProvider || orgName;
 
-      if (threat === "None") {
-        if (riskLabel.includes("High") || riskLabel === "VPN ASN Match")
+      if (rawThreat && rawThreat !== "None") {
+        threat = rawThreat;
+      } else {
+        if (riskLabel.includes("High") || riskLabel === "VPN ASN Match") {
           threat = "High (VPN Hosting)";
-        else if (riskLabel.includes("Medium"))
+        } else if (riskLabel.includes("Medium")) {
           threat = "Medium (Hosting Provider)";
-        else threat = "Low (Cloud Provider)";
+        } else {
+          threat = "Low (Cloud Provider)";
+        }
       }
     }
 
