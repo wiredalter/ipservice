@@ -23,6 +23,8 @@ function toggleTheme() {
 initTheme();
 
 let map;
+let pendingMapLocation = null;
+let cachedCartoKey = "";
 window.currentMapStyle = "street";
 
 class MapStyleControl {
@@ -147,6 +149,77 @@ class CenterMapControl {
   }
 }
 
+function setOrQueueMapLocation(lat, lon, city) {
+  if (!map) {
+    pendingMapLocation = { lat, lon, city };
+    return;
+  }
+  
+  map.resize();
+  window.currentCoords = [lon, lat];
+  map.jumpTo({ center: [lon, lat], zoom: 13 });
+  
+  if (marker) marker.remove();
+
+  const el = document.createElement("div");
+  el.className = "custom-marker-wrapper";
+  el.innerHTML = `
+    <div class="relative flex h-8 w-8 items-center justify-center">
+      <div class="absolute inset-0 rounded-full border border-emerald-500/40"></div>
+      <div class="absolute h-full w-[1px] bg-emerald-500/40"></div>
+      <div class="absolute h-[1px] w-full bg-emerald-500/40"></div>
+      <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600 shadow-sm shadow-emerald-500/50"></span>
+    </div>
+  `;
+
+  const popup = new maplibregl.Popup({
+    offset: 15,
+    focusAfterOpen: false,
+  }).setHTML(`<b class="text-zinc-800">${city}</b>`);
+
+  marker = new maplibregl.Marker({ element: el })
+    .setLngLat([lon, lat])
+    .setPopup(popup)
+    .addTo(map);
+
+  marker.togglePopup();
+}
+
+function setupLazyMap(cartoKey) {
+  cachedCartoKey = cartoKey;
+  const mapContainer = document.getElementById("map");
+  if (!mapContainer) return;
+
+  const triggerInit = () => {
+    if (map) return;
+    try {
+      initMap(cachedCartoKey);
+    } catch (e) {
+      console.error("Map initialization failed:", e);
+    }
+    if (pendingMapLocation) {
+      setOrQueueMapLocation(
+        pendingMapLocation.lat,
+        pendingMapLocation.lon,
+        pendingMapLocation.city
+      );
+      pendingMapLocation = null;
+    }
+  };
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        triggerInit();
+        observer.disconnect();
+      }
+    }, { rootMargin: "300px" });
+    observer.observe(mapContainer);
+  } else {
+    triggerInit();
+  }
+}
+
 function initMap(cartoKey) {
   // cartoKey is kept for signature compatibility but not used
   const isDark = document.documentElement.classList.contains("dark");
@@ -193,7 +266,6 @@ function initMap(cartoKey) {
 
   map.on("load", () => {
     map.resize();
-    window.currentCoords = [lon, lat];
   });
 
   updateMapTheme(isDark ? "dark" : "light");
@@ -274,9 +346,9 @@ async function fetchSmartIPs() {
       // Config unavailable — map will load without key (watermark shown)
     }
     try {
-      initMap(cartoKey);
+      setupLazyMap(cartoKey);
     } catch (e) {
-      console.error("Map initialization failed:", e);
+      console.error("Map lazy setup failed:", e);
     }
 
     let apiUrl = "/api/info";
@@ -419,35 +491,11 @@ function populateDetails(data) {
   }
 
   if (data.latitude && data.longitude) {
-    const lat = parseFloat(data.latitude);
-    const lon = parseFloat(data.longitude);
-    map.resize();
-    window.currentCoords = [lon, lat];
-    map.jumpTo({ center: [lon, lat], zoom: 13 });
-    if (marker) marker.remove();
-
-    const el = document.createElement("div");
-    el.className = "custom-marker-wrapper";
-    el.innerHTML = `
-      <div class="relative flex h-8 w-8 items-center justify-center">
-        <div class="absolute inset-0 rounded-full border border-emerald-500/40"></div>
-        <div class="absolute h-full w-[1px] bg-emerald-500/40"></div>
-        <div class="absolute h-[1px] w-full bg-emerald-500/40"></div>
-        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600 shadow-sm shadow-emerald-500/50"></span>
-      </div>
-    `;
-
-    const popup = new maplibregl.Popup({
-      offset: 15,
-      focusAfterOpen: false,
-    }).setHTML(`<b class="text-zinc-800">${data.city}</b>`);
-
-    marker = new maplibregl.Marker({ element: el })
-      .setLngLat([lon, lat])
-      .setPopup(popup)
-      .addTo(map);
-
-    marker.togglePopup();
+    setOrQueueMapLocation(
+      parseFloat(data.latitude),
+      parseFloat(data.longitude),
+      data.city
+    );
   }
 }
 
