@@ -165,6 +165,13 @@
       font-size: 16px;
     }
   </style>
+  <link href="https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <script type="module">
+    import * as maplibregl from "https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.mjs";
+    window.maplibregl = maplibregl;
+  </script>
+  <script src="/app.js?v=2.7" defer></script>
+  <script src="/dnsleak.js?v=1.0" defer></script>
 </head>
 
 <body class="bg-wired-light dark:bg-[#09090b] text-zinc-600 dark:text-zinc-300 min-h-screen flex flex-col">
@@ -815,14 +822,6 @@ Loading...</pre>
       </div>
     </div>
   </div>
-
-  <link href="https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.css" rel="stylesheet" />
-  <script type="module">
-    import * as maplibregl from "https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.mjs";
-    window.maplibregl = maplibregl;
-  </script>
-  <script src="/app.js?v=2.7" defer></script>
-  <script src="/dnsleak.js?v=1.0" defer></script>
 </body>
 
 </html>
