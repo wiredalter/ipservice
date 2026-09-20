@@ -228,16 +228,25 @@ function setupLazyMap(cartoKey) {
     }
   };
 
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        triggerInit();
-        observer.disconnect();
-      }
-    }, { rootMargin: "300px" });
-    observer.observe(mapContainer);
+  const attachObserver = () => {
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          triggerInit();
+          observer.disconnect();
+        }
+      }, { rootMargin: "300px" });
+      observer.observe(mapContainer);
+    } else {
+      triggerInit();
+    }
+  };
+
+  // Wait until the main thread is idle or page has fully loaded to attach the observer
+  if (document.readyState === "complete") {
+    setTimeout(attachObserver, 500);
   } else {
-    triggerInit();
+    window.addEventListener("load", () => setTimeout(attachObserver, 500));
   }
 }
 
