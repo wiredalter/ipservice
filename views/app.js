@@ -190,8 +190,29 @@ function setupLazyMap(cartoKey) {
   const mapContainer = document.getElementById("map");
   if (!mapContainer) return;
 
-  const triggerInit = () => {
+  const triggerInit = async () => {
     if (map) return;
+    
+    // Dynamically inject CSS if missing
+    if (!document.getElementById("maplibre-css")) {
+      const link = document.createElement("link");
+      link.id = "maplibre-css";
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.css";
+      document.head.appendChild(link);
+    }
+
+    // Dynamically import JS if missing
+    if (!window.maplibregl) {
+      try {
+        const mlgl = await import("https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.mjs");
+        window.maplibregl = mlgl;
+      } catch (e) {
+        console.error("Failed to load maplibre", e);
+        return;
+      }
+    }
+
     try {
       initMap(cachedCartoKey);
     } catch (e) {

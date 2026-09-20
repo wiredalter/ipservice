@@ -9,7 +9,7 @@
     "express-rate-limit": "^8.7.0",
     "ip2location-nodejs": "^9.8.0",
     "ip2proxy-nodejs": "^4.5.0",
-    "lru-cache": "^11.5.2",
+    "lru-cache": "^11.5.3",
     "maplibre-gl": "^6.10.0",
     "maxmind": "^5.0.7"
   },
@@ -21,6 +21,7 @@
   "scripts": {
     "start": "node server.js",
     "build:css": "npx @tailwindcss/cli -i ./views/input.css -o ./public/style.min.css --minify",
-    "build": "npm run build:css"
+    "build:js": "terser ./views/app.js -o ./public/app.min.js --compress --mangle",
+    "build": "npm run build:css && npm run build:js"
   }
 }

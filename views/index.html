@@ -19,6 +19,7 @@
   <!-- Resource Hints for Core Web Vitals -->
   <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link rel="dns-prefetch" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://ipv6.ipsearch.uk" crossorigin />
   <link rel="preload" href="/fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
 
   <!-- Open Graph & Social Cards -->
@@ -165,12 +166,7 @@
       font-size: 16px;
     }
   </style>
-  <link href="https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.css" rel="stylesheet" />
-  <script type="module">
-    import * as maplibregl from "https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.mjs";
-    window.maplibregl = maplibregl;
-  </script>
-  <script src="/app.js?v=2.7" defer></script>
+  <script src="/app.min.js?v=2.7" defer></script>
   <script src="/dnsleak.js?v=1.0" defer></script>
 </head>
 
@@ -261,7 +257,7 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="atlas-panel p-5 md:p-6 rounded-xl flex flex-col h-full">
+      <div class="atlas-panel p-5 md:p-6 rounded-xl flex flex-col h-full min-h-[350px]">
         <div class="text-emerald-600 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-widest mb-3">
           Network Identity
         </div>
@@ -299,7 +295,7 @@
         </div>
       </div>
 
-      <div class="atlas-panel p-5 md:p-6 rounded-xl flex flex-col h-full space-y-4">
+      <div class="atlas-panel p-5 md:p-6 rounded-xl flex flex-col h-full min-h-[350px] space-y-4">
         <div>
           <div class="text-emerald-600 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-widest mb-3">
             Geographic Position
@@ -332,7 +328,7 @@
         </div>
       </div>
 
-      <div class="atlas-panel p-5 md:p-6 rounded-xl h-full space-y-3">
+      <div class="atlas-panel p-5 md:p-6 rounded-xl h-full min-h-[350px] space-y-3">
         <div class="text-emerald-600 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-widest mb-3">
           Risk Analysis
         </div>
@@ -645,7 +641,7 @@ Loading...</pre>
               class="group inline-flex items-center justify-center rounded-xl bg-zinc-200/40 dark:bg-zinc-800/40 p-3 border border-zinc-300/50 dark:border-zinc-700/50 shadow-md shadow-black/30 backdrop-blur-sm hover:bg-zinc-300/60 dark:hover:bg-zinc-700/60 hover:border-zinc-400/50 dark:hover:border-zinc-500/50 transition-all duration-300">
               <img src="/abuseip-badge.svg" alt="AbuseIPDB Contributor Badge" width="180" height="35" loading="lazy"
                 decoding="async"
-                class="w-[180px] h-auto opacity-70 dark:opacity-85 brightness-0 dark:brightness-100 group-hover:opacity-100 transition-all" />
+                class="w-[180px] h-[35px] opacity-70 dark:opacity-85 brightness-0 dark:brightness-100 group-hover:opacity-100 transition-all" />
             </a>
           </div>
         </div>
