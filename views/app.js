@@ -343,20 +343,18 @@ function initMap() {
   map.addControl(new CenterMapControl(), "top-right");
   map.addControl(new CustomAttributionControl(), "bottom-right");
 
+  // Use MapLibre's native missing image resolver to silently handle OpenFreeMap's missing patterns
+  if (map.setMissingStyleImageResolver) {
+    map.setMissingStyleImageResolver((id) => {
+      if (id === "wood-pattern") {
+        return { width: 1, height: 1, data: new Uint8Array(4) };
+      }
+    });
+  }
+
   map.on("load", () => {
     map.resize();
     addStyleSwitcher();
-  });
-
-  // Gracefully handle missing patterns from upstream OpenFreeMap styles
-  map.on("styleimagemissing", (e) => {
-    if (e.id === "wood-pattern") {
-      try {
-        map.addImage("wood-pattern", { width: 1, height: 1, data: new Uint8Array(4) });
-      } catch (err) {
-        // Fail silently if API ever changes
-      }
-    }
   });
 }
 
