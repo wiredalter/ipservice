@@ -24,87 +24,180 @@ initTheme();
 
 let map;
 let pendingMapLocation = null;
-let cachedCartoKey = "";
-window.currentMapStyle = "street";
+let currentStyle = "dark"; // tracks which style is active: "dark", "light", "satellite"
 
-class MapStyleControl {
-  onAdd(map) {
-    this._map = map;
-    this._container = document.createElement("div");
-    this._container.className = "maplibregl-ctrl";
+const MAP_STYLES = {
+  dark: "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/positron",
+  satellite: {
+    version: 8,
+    sources: {
+      esri: {
+        type: "raster",
+        tiles: [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
+        attribution: "Tiles &copy; <a href=\"https://www.esri.com/\" target=\"_blank\">Esri</a>",
+        maxzoom: 19,
+      },
+    },
+    layers: [{ id: "esri-tiles", type: "raster", source: "esri" }],
+  },
+};
 
+function updateStyleSwitcherState() {
+  const container = document.getElementById("map-style-switcher");
+  if (!container) return;
+  const styles = ["dark", "light", "satellite"];
+
+  Array.from(container.children).forEach((button, index) => {
+    if (styles[index] === currentStyle) {
+      button.className = "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-bold text-[10px] uppercase tracking-wide !px-3 !w-auto h-[29px] border-r border-zinc-300 dark:border-zinc-600 last:border-0 transition-colors";
+    } else {
+      button.className = "bg-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200 text-[10px] uppercase tracking-wide !px-3 !w-auto h-[29px] border-r border-zinc-200 dark:border-zinc-700/50 last:border-0 transition-colors";
+    }
+  });
+}
+
+function addStyleSwitcher() {
+  const container = document.createElement("div");
+  container.id = "map-style-switcher";
+  container.className = "maplibregl-ctrl maplibregl-ctrl-group flex flex-row overflow-hidden";
+  container.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.1)";
+
+  const styles = [
+    { id: "dark", label: "Dark" },
+    { id: "light", label: "Light" },
+    { id: "satellite", label: "Sat" },
+  ];
+
+  styles.forEach((s) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.style.backgroundColor = "#ffffff";
-    btn.style.color = "#27272a";
-    btn.style.fontWeight = "bold";
-    btn.style.fontSize = "12px";
-    btn.style.border = "none";
-    btn.style.borderRadius = "4px";
-    btn.style.padding = "0 8px";
-    btn.style.height = "29px";
-    btn.style.cursor = "pointer";
-    btn.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.1)";
+    btn.textContent = s.label;
+    btn.title = s.label + " Mode";
+    btn.style.width = "auto";
+    btn.style.padding = "0 12px"; // Force padding to override maplibre CSS
     btn.style.display = "flex";
     btn.style.alignItems = "center";
     btn.style.justifyContent = "center";
-    btn.innerHTML = `SAT`;
-    btn.title = "Toggle Satellite View";
 
-    btn.onclick = () => {
-      const isSat = window.currentMapStyle === "satellite";
-      window.currentMapStyle = isSat ? "street" : "satellite";
-      btn.innerHTML = isSat ? "SAT" : "MAP";
+    btn.addEventListener("click", () => switchMapStyle(s.id));
+    container.appendChild(btn);
+  });
 
-      const theme = document.documentElement.classList.contains("dark")
-        ? "dark"
-        : "light";
+  const ctrlWrapper = {
+    onAdd: () => container,
+    onRemove: () => container.remove(),
+  };
+  map.addControl(ctrlWrapper, "top-left");
+  updateStyleSwitcherState();
+}
 
-      if (window.currentMapStyle === "satellite") {
-        map.setStyle({
-          version: 8,
-          sources: {
-            satellite: {
-              type: "raster",
-              tiles: [
-                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-              ],
-              tileSize: 256,
-              attribution:
-                '&copy; <a href="https://www.esri.com/" target="_blank">Esri</a>',
-            },
-          },
-          layers: [{ id: "satellite", type: "raster", source: "satellite" }],
-        });
-      } else {
-        map.setStyle({
-          version: 8,
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: [
-                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ],
-              tileSize: 256,
-              maxzoom: 19,
-              attribution:
-                '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors',
-            },
-          },
-          layers: [{ id: "osm", type: "raster", source: "osm" }],
-        });
+function switchMapStyle(styleId) {
+  if (!map || styleId === currentStyle) return;
+  currentStyle = styleId;
+  updateStyleSwitcherState();
+
+  // Save current view state
+  const center = map.getCenter();
+  const zoom = map.getZoom();
+
+  map.setStyle(MAP_STYLES[styleId]);
+
+  // Re-add marker after style change (style change clears all layers)
+  map.once("style.load", () => {
+    map.setCenter(center);
+    map.setZoom(zoom);
+    if (marker) {
+      marker.addTo(map);
+    }
+  });
+}
+
+class CustomAttributionControl {
+  onAdd(map) {
+    this._map = map;
+    this._container = document.createElement("div");
+    this._container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    this._container.style.display = "flex";
+    this._container.style.flexDirection = "row-reverse";
+    this._container.style.alignItems = "center";
+    this._container.style.maxWidth = "29px"; // Start compact
+    this._container.style.transition = "max-width 0.3s ease";
+    this._container.style.overflow = "hidden";
+    this._container.style.whiteSpace = "nowrap";
+
+    // "i" Button
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Map Attributions";
+    btn.className = "custom-map-btn"; // Inherit matching CSS colors
+    btn.style.width = "29px";
+    btn.style.height = "29px";
+    btn.style.flexShrink = "0";
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
+    // Attribution Text
+    this._textDiv = document.createElement("div");
+    this._textDiv.className = "text-[10px] text-zinc-600 dark:text-zinc-400 pl-3 pr-1";
+    this._textDiv.style.opacity = "0";
+    this._textDiv.style.transition = "opacity 0.2s ease";
+
+    this._updateAttributions = () => {
+      const style = this._map.getStyle();
+      if (!style || !style.sources) return;
+
+      const attributions = new Set();
+      Object.keys(style.sources).forEach(id => {
+        const source = this._map.getSource(id);
+        if (source && source.attribution) {
+          attributions.add(source.attribution);
+        }
+      });
+
+      let html = Array.from(attributions).join(" | ");
+
+      if (!html && this._textDiv.innerHTML && this._textDiv.innerHTML !== "Map data") {
+        return; // wait for sourcedata event
       }
 
-      setTimeout(() => updateMapTheme(theme), 50);
+      html = html.replace(/<a /g, '<a class="hover:text-emerald-500 underline" ');
+
+      if (!html) html = "Map data";
+
+      if (this._textDiv.innerHTML !== html) {
+        this._textDiv.innerHTML = html;
+      }
     };
 
+    this._map.on("styledata", this._updateAttributions);
+    this._map.on("sourcedata", this._updateAttributions);
+
+    // Interaction (Hover to expand)
+    this._container.addEventListener("mouseenter", () => {
+      this._updateAttributions();
+      this._container.style.maxWidth = "500px";
+      this._textDiv.style.opacity = "1";
+    });
+    this._container.addEventListener("mouseleave", () => {
+      this._container.style.maxWidth = "29px";
+      this._textDiv.style.opacity = "0";
+    });
+
     this._container.appendChild(btn);
+    this._container.appendChild(this._textDiv);
+
     return this._container;
   }
 
   onRemove() {
+    this._map.off("styledata", this._updateAttributions);
+    this._map.off("sourcedata", this._updateAttributions);
     this._container.parentNode.removeChild(this._container);
     this._map = undefined;
   }
@@ -114,28 +207,20 @@ class CenterMapControl {
   onAdd(map) {
     this._map = map;
     this._container = document.createElement("div");
-    this._container.className = "maplibregl-ctrl";
+    this._container.className = "maplibregl-ctrl maplibregl-ctrl-group";
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.style.backgroundColor = "#ffffff";
-    btn.style.color = "#27272a";
-    btn.style.border = "none";
-    btn.style.borderRadius = "4px";
-    btn.style.padding = "0";
-    btn.style.height = "29px";
-    btn.style.width = "29px";
-    btn.style.cursor = "pointer";
-    btn.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.1)";
+    btn.title = "Center on IP";
+    btn.className = "custom-map-btn";
     btn.style.display = "flex";
     btn.style.alignItems = "center";
     btn.style.justifyContent = "center";
     btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-    btn.title = "Center on IP";
 
     btn.onclick = () => {
       if (window.currentCoords) {
-        map.flyTo({ center: window.currentCoords, zoom: 13 });
+        map.flyTo({ center: window.currentCoords, zoom: 13, speed: 1.5 });
       }
     };
 
@@ -154,11 +239,11 @@ function setOrQueueMapLocation(lat, lon, city) {
     pendingMapLocation = { lat, lon, city };
     return;
   }
-  
+
   map.resize();
   window.currentCoords = [lon, lat];
-  map.jumpTo({ center: [lon, lat], zoom: 13 });
-  
+  map.flyTo({ center: [lon, lat], zoom: 13, speed: 1.5 });
+
   if (marker) marker.remove();
 
   const el = document.createElement("div");
@@ -175,7 +260,7 @@ function setOrQueueMapLocation(lat, lon, city) {
   const popup = new maplibregl.Popup({
     offset: 15,
     focusAfterOpen: false,
-  }).setHTML(`<b class="text-zinc-800">${city}</b>`);
+  }).setHTML(`<b class="text-zinc-800 dark:text-zinc-100">${city}</b>`);
 
   marker = new maplibregl.Marker({ element: el })
     .setLngLat([lon, lat])
@@ -185,36 +270,21 @@ function setOrQueueMapLocation(lat, lon, city) {
   marker.togglePopup();
 }
 
-function setupLazyMap(cartoKey) {
-  cachedCartoKey = cartoKey;
+function setupLazyMap() {
   const mapContainer = document.getElementById("map");
   if (!mapContainer) return;
 
-  const triggerInit = async () => {
+  const triggerInit = () => {
     if (map) return;
-    
-    // Dynamically inject CSS if missing
-    if (!document.getElementById("maplibre-css")) {
-      const link = document.createElement("link");
-      link.id = "maplibre-css";
-      link.rel = "stylesheet";
-      link.href = "https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.css";
-      document.head.appendChild(link);
-    }
 
-    // Dynamically import JS if missing
+    // Ensure maplibregl is available (it's loaded via defer script in head)
     if (!window.maplibregl) {
-      try {
-        const mlgl = await import("https://unpkg.com/maplibre-gl@6.9.0/dist/maplibre-gl.mjs");
-        window.maplibregl = mlgl;
-      } catch (e) {
-        console.error("Failed to load maplibre", e);
-        return;
-      }
+      setTimeout(triggerInit, 100);
+      return;
     }
 
     try {
-      initMap(cachedCartoKey);
+      initMap();
     } catch (e) {
       console.error("Map initialization failed:", e);
     }
@@ -242,7 +312,6 @@ function setupLazyMap(cartoKey) {
     }
   };
 
-  // Wait until the main thread is idle or page has fully loaded to attach the observer
   if (document.readyState === "complete") {
     setTimeout(attachObserver, 500);
   } else {
@@ -250,68 +319,41 @@ function setupLazyMap(cartoKey) {
   }
 }
 
-function initMap(cartoKey) {
-  // cartoKey is kept for signature compatibility but not used
+function initMap() {
   const isDark = document.documentElement.classList.contains("dark");
+  currentStyle = isDark ? "dark" : "light";
+
+  const workerUrl = '/maplibre/maplibre-gl-worker.js?v=20260926';
+  if (window.maplibregl.setWorkerUrl) {
+    window.maplibregl.setWorkerUrl(workerUrl);
+  } else if (window.maplibregl.config) {
+    window.maplibregl.config.WORKER_URL = workerUrl;
+  }
 
   map = new maplibregl.Map({
     container: "map",
-    style: {
-      version: 8,
-      sources: {
-        osm: {
-          type: "raster",
-          tiles: [
-            "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          ],
-          tileSize: 256,
-          maxzoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> Contributors',
-        },
-      },
-      layers: [
-        {
-          id: "osm",
-          type: "raster",
-          source: "osm",
-        },
-      ],
-    },
+    style: MAP_STYLES[currentStyle],
     center: [-0.09, 51.505], // MapLibre uses [lng, lat]
     zoom: 13,
+    cooperativeGestures: true,
     attributionControl: false,
   });
 
-  map.addControl(
-    new maplibregl.AttributionControl({
-      compact: true,
-    }),
-  );
-
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new CenterMapControl(), "top-right");
-  map.addControl(new MapStyleControl(), "top-right");
+  map.addControl(new CustomAttributionControl(), "bottom-right");
 
   map.on("load", () => {
     map.resize();
+    addStyleSwitcher();
   });
-
-  updateMapTheme(isDark ? "dark" : "light");
 }
 
 function updateMapTheme(theme) {
-  setTimeout(() => {
-    const mapCanvas = document.querySelector(".maplibregl-canvas");
-    if (!mapCanvas) return;
-    if (theme === "dark" && window.currentMapStyle !== "satellite") {
-      mapCanvas.style.filter =
-        "invert(100%) hue-rotate(180deg) brightness(85%) contrast(85%) grayscale(30%)";
-    } else {
-      mapCanvas.style.filter = "none";
-    }
-  }, 100);
+  if (!map) return;
+  if (currentStyle !== "satellite") {
+    switchMapStyle(theme === "dark" ? "dark" : "light");
+  }
 }
 
 let marker;
@@ -366,21 +408,6 @@ function createIpRow(ip, type) {
 async function fetchSmartIPs() {
   const displayArea = document.getElementById("ip-display-area");
   try {
-    let config = {};
-    let cartoKey = "";
-    try {
-      const configRes = await fetch("/api/config");
-      config = await configRes.json();
-      cartoKey = config.carto_api_key || "";
-    } catch (_) {
-      // Config unavailable — map will load without key (watermark shown)
-    }
-    try {
-      setupLazyMap(cartoKey);
-    } catch (e) {
-      console.error("Map lazy setup failed:", e);
-    }
-
     let apiUrl = "/api/info";
     const rawSearch = window.location.search.substring(1).trim();
     let targetIp = null;
@@ -395,23 +422,37 @@ async function fetchSmartIPs() {
     }
 
     if (targetIp) {
-      apiUrl = `/api/info?ip=${targetIp}`;
+      apiUrl = `/api/info?ip=${encodeURIComponent(targetIp)}`;
       const searchInput = document.getElementById("searchInput");
       if (searchInput) searchInput.value = targetIp;
     }
 
-    const res = await fetch(apiUrl);
-    const primaryData = await res.json();
+    // Concurrently fetch config and IP data
+    const [configRes, infoRes] = await Promise.all([
+      fetch("/api/config").catch(() => null),
+      fetch(apiUrl),
+    ]);
+
+    let config = {};
+    if (configRes && configRes.ok) {
+      try {
+        config = await configRes.json();
+      } catch (_) { }
+    }
+
+    setupLazyMap();
+
+    const primaryData = await infoRes.json();
     if (primaryData.error) throw new Error(primaryData.error);
 
     const primaryIsV6 = primaryData.ip.includes(":");
     const primaryType = primaryIsV6 ? "IPv6" : "IPv4";
 
-    displayArea.innerHTML = createIpRow(primaryData.ip, primaryType, true); // true = isPrimary
+    displayArea.innerHTML = createIpRow(primaryData.ip, primaryType);
     populateDetails(primaryData);
 
     // Only fetch secondary protocol IP if we are checking the client's own IP
-    if (!targetIp) {
+    if (!targetIp && config.v4_url && config.v6_url) {
       const missingUrl = primaryIsV6 ? config.v4_url : config.v6_url;
       const missingType = primaryIsV6 ? "IPv4" : "IPv6";
 
@@ -420,17 +461,14 @@ async function fetchSmartIPs() {
         if (secRes.ok) {
           const secData = await secRes.json();
           if (secData.ip && secData.ip !== primaryData.ip) {
-            displayArea.innerHTML += createIpRow(
-              secData.ip,
-              missingType,
-              false,
-            ); // false = isSecondary
+            const secIsV6 = secData.ip.includes(":");
+            if ((primaryIsV6 && !secIsV6) || (!primaryIsV6 && secIsV6)) {
+              displayArea.innerHTML += createIpRow(secData.ip, missingType);
+            }
           }
-        } else {
-          console.error(`Secondary fetch failed with status: ${secRes.status}`);
         }
       } catch (e) {
-        console.error("Secondary protocol fetch error:", e.message);
+        console.log("Secondary protocol unavailable.");
       }
     }
   } catch (err) {
@@ -757,11 +795,11 @@ ${formattedRawText}
       let emailsHtml =
         data.abuse_contacts.length > 0
           ? data.abuse_contacts
-              .map(
-                (e) =>
-                  `<a href="mailto:${e}" class="text-emerald-500 hover:underline">${e}</a>`,
-              )
-              .join(", ")
+            .map(
+              (e) =>
+                `<a href="mailto:${e}" class="text-emerald-500 hover:underline">${e}</a>`,
+            )
+            .join(", ")
           : '<span class="text-zinc-400">Not provided</span>';
 
       content.innerHTML = `

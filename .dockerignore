@@ -18,7 +18,8 @@ yarn-error.log
 
 # --- local build/test files ---
 public/style.min.css
-views/app.min.js
+public/app.min.js
+public/maplibre/
 
 # --- Git & Config ---
 .git/
