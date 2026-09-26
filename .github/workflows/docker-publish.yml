@@ -79,3 +79,4 @@ jobs:
           repository-name: ${{ github.event.repository.name }}
           delete-untagged: true
           keep-at-most: 5
+          skip-tags: latest, v0.1.0
