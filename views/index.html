@@ -17,8 +17,8 @@
   <meta name="theme-color" content="#09090b" />
 
   <!-- Resource Hints for Core Web Vitals -->
-  <link rel="preconnect" href="https://unpkg.com" crossorigin />
-  <link rel="dns-prefetch" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+  <link rel="dns-prefetch" href="https://tiles.openfreemap.org" />
   <link rel="preconnect" href="https://ipv6.ipsearch.uk" />
   <link rel="preload" href="/fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
 
@@ -42,16 +42,19 @@
   <meta name="twitter:image" content="https://ipsearch.uk/preview-image.png" />
   <meta name="twitter:image:alt" content="IPSearch - What Is My IP Address and Threat Intelligence Lookup" />
 
-  <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
-  <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+  <!-- Favicons -->
+  <link rel="icon" href="/favicon/favicon.ico" sizes="32x32" />
+  <link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
   <link rel="manifest" href="/favicon/site.webmanifest" />
 
   <link rel="stylesheet" href="/style.min.css?v=1.1" />
+  <link rel="stylesheet" href="/maplibre/maplibre-gl.css" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="/maplibre/maplibre-gl.css" />
+  </noscript>
+
+  <script src="/maplibre/maplibre-gl.js" defer></script>
 
   <script type="application/ld+json">
       {
@@ -659,8 +662,10 @@ Loading...</pre>
               class="underline decoration-zinc-400 dark:decoration-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-300">Esri</a>.
             Rendered via
             <a href="https://maplibre.org/" rel="nofollow" target="_blank"
-              class="underline decoration-zinc-400 dark:decoration-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-300">MapLibre
-              GL JS</a>.
+              class="underline decoration-zinc-400 dark:decoration-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-300">MapLibre</a>
+            &
+            <a href="https://openfreemap.org/" rel="nofollow" target="_blank"
+              class="underline decoration-zinc-400 dark:decoration-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-300">OpenFreeMap</a>.
           </p>
           <p>Powered by Node.js.</p>
         </div>

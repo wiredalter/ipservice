@@ -180,15 +180,107 @@ html:not(.dark) .search-input:focus {
   box-shadow: 0 0 0 1px #059669;
 }
 
-/* MapLibre dark mode overrides */
-html.dark .maplibregl-ctrl-group {
-  background-color: var(--color-atlas-dark-surface);
-  border: 1px solid var(--color-atlas-dark-border);
+/* MapLibre Group Overrides (Zoom, Compass, Center, Custom Attribution) */
+.maplibregl-ctrl-group {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 6px !important;
+  overflow: hidden;
 }
 
-html.dark .maplibregl-ctrl-attrib {
-  background-color: rgba(21, 27, 35, 0.8) !important;
-  color: #8998a9 !important;
+html.dark .maplibregl-ctrl-group {
+  background-color: var(--color-atlas-dark-surface) !important;
+  border: 1px solid var(--color-atlas-dark-border) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+}
+
+html:not(.dark) .maplibregl-ctrl-group {
+  background-color: var(--color-atlas-light-surface) !important;
+  border: 1px solid var(--color-atlas-light-border) !important;
+}
+
+/* Base button styling inside groups */
+.maplibregl-ctrl-group .maplibregl-ctrl-zoom-in,
+.maplibregl-ctrl-group .maplibregl-ctrl-zoom-out,
+.maplibregl-ctrl-group .maplibregl-ctrl-compass,
+.maplibregl-ctrl-group .custom-map-btn {
+  transition: all 0.2s ease;
+}
+
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-zoom-in,
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-zoom-out,
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-compass,
+html.dark .maplibregl-ctrl-group .custom-map-btn {
+  color: #a1a1aa !important; /* zinc-400 */
+}
+
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-zoom-in:hover,
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-zoom-out:hover,
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-compass:hover,
+html.dark .maplibregl-ctrl-group .custom-map-btn:hover {
+  background-color: #27272a !important; /* zinc-800 */
+  color: #e4e4e7 !important; /* zinc-200 */
+}
+
+html:not(.dark) .maplibregl-ctrl-group .maplibregl-ctrl-zoom-in,
+html:not(.dark) .maplibregl-ctrl-group .maplibregl-ctrl-zoom-out,
+html:not(.dark) .maplibregl-ctrl-group .maplibregl-ctrl-compass,
+html:not(.dark) .maplibregl-ctrl-group .custom-map-btn {
+  color: #52525b !important; /* zinc-600 */
+}
+
+html:not(.dark) .maplibregl-ctrl-group .maplibregl-ctrl-zoom-in:hover,
+html:not(.dark) .maplibregl-ctrl-group .maplibregl-ctrl-zoom-out:hover,
+html:not(.dark) .maplibregl-ctrl-group .maplibregl-ctrl-compass:hover,
+html:not(.dark) .maplibregl-ctrl-group .custom-map-btn:hover {
+  background-color: #f4f4f5 !important; /* zinc-100 */
+  color: #18181b !important; /* zinc-900 */
+}
+
+/* Default MapLibre SVG icons are background images, invert them for dark mode */
+html.dark .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  filter: invert(1);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+html.dark .maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
+  opacity: 1;
+}
+
+html:not(.dark) .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+html:not(.dark) .maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
+  opacity: 1;
+}
+
+/* Borders between buttons */
+html.dark .maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--color-atlas-dark-border) !important;
+}
+
+html:not(.dark) .maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--color-atlas-light-border) !important;
+}
+
+/* Center IP button specific (it uses an inline SVG) */
+.maplibregl-ctrl-group .custom-map-btn svg {
+  color: currentColor; /* Inherits from the button color set above */
+}
+
+/* Popups */
+html.dark .maplibregl-popup-content {
+  background-color: var(--color-atlas-dark-surface);
+  color: #f4f4f5;
+  border: 1px solid var(--color-atlas-dark-border);
+  border-radius: 8px;
+}
+
+html.dark .maplibregl-popup-tip {
+  border-top-color: var(--color-atlas-dark-surface);
+  border-bottom-color: var(--color-atlas-dark-surface);
 }
 
 /* Custom Scrollbar */

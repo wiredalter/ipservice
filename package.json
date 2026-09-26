@@ -10,11 +10,12 @@
     "ip2location-nodejs": "^9.8.0",
     "ip2proxy-nodejs": "^4.5.0",
     "lru-cache": "^11.5.3",
-    "maplibre-gl": "^6.10.0",
     "maxmind": "^5.0.7"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
+    "esbuild": "^0.28.2",
+    "maplibre-gl": "^6.11.2",
     "tailwindcss": "^4.3.3",
     "terser": "^5.51.2"
   },
@@ -22,6 +23,7 @@
     "start": "node server.js",
     "build:css": "npx @tailwindcss/cli -i ./views/input.css -o ./public/style.min.css --minify",
     "build:js": "terser ./views/app.js -o ./public/app.min.js --compress --mangle",
-    "build": "npm run build:css && npm run build:js"
+    "build:map": "mkdir -p public/maplibre && npx esbuild node_modules/maplibre-gl/dist/maplibre-gl.mjs --bundle --minify --format=iife --global-name=maplibregl --outfile=public/maplibre/maplibre-gl.js && npx esbuild node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs --bundle --minify --format=iife --outfile=public/maplibre/maplibre-gl-worker.js && cp node_modules/maplibre-gl/dist/maplibre-gl.css public/maplibre/",
+    "build": "npm run build:css && npm run build:js && npm run build:map"
   }
 }

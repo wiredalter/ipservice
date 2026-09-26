@@ -1,0 +1,124 @@
+# --- Global options ---
+{
+	email {env.LETSE_EMAIL}
+	admin :2019
+	metrics
+
+	log {
+		output file /var/log/caddy/system-access.log {
+			mode 0640
+			roll_size 5mb
+			roll_keep 3
+			roll_keep_for 120h
+		}
+		format json
+		level INFO
+	}
+
+	# --- CrowdSec Bouncer Configuration ---
+	crowdsec {
+		api_url http://crowdsec:8080
+		api_key {env.CROWDSEC_CADDY_API_KEY}
+		appsec_url http://crowdsec:7422
+		ticker_interval 15s
+		metrics_interval 10m
+	}
+}
+
+(secure_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+		-X-Powered-By
+		-Via
+	}
+}
+
+# --- Internal Healthcheck ---
+:2020 {
+	respond "OK" 200
+}
+
+# --- IP Service (HTTP for CLI Tools) ---
+http://ipsearch.uk, http://ipv6.ipsearch.uk, http://ipv4.ipsearch.uk {
+	# Enable logging so CrowdSec can read the access logs!
+	log {
+		output file /var/log/caddy/ip-cli-access.log {
+			mode 0640
+			roll_size 5MiB
+			roll_keep 2
+			roll_keep_for 120h
+		}
+		format json
+	}
+
+	# 1. Route ALL port 80 traffic through CrowdSec first!
+	route {
+		crowdsec
+		appsec
+
+		# 2. Match the exact User-Agents from your server.js logic
+		@cli {
+			header_regexp User-Agent "(?i)(curl|wget|httpie|python|powershell|aiohttp|go-http-client)"
+		}
+
+		# 3. If it's a CLI tool, proxy it directly over HTTP
+		handle @cli {
+			header -Via
+			reverse_proxy ipsearch:4040 {
+				header_up -CF-Connecting-IP
+				header_up -X-Real-IP
+				header_down -X-Powered-By
+			}
+		}
+
+		# 4. For all other HTTP traffic (e.g., normal browsers), force HTTPS
+		handle {
+			redir https://{host}{uri} permanent
+		}
+	}
+}
+
+# --- IP Service (HTTPS for Web Browsers) ---
+https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://ipv4.ipsearch.uk {
+	log {
+		output file /var/log/caddy/ip-access.log {
+			mode 0640
+			roll_size 5MiB
+			roll_keep 2
+			roll_keep_for 120h
+		}
+		format json
+	}
+
+	route {
+		crowdsec
+		appsec
+
+		encode zstd gzip
+
+		import secure_headers
+		header Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.openstreetmap.org https://server.arcgisonline.com https://www.abuseipdb.com https://tiles.openfreemap.org; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.ipsearch.uk https://bash.ws https://*.bash.ws https://tiles.openfreemap.org; worker-src 'self' blob:;"
+
+		# Immutable Assets (1-Year Cache)
+		@static_immutable {
+			path /fonts/* /favicon/* /preview-image.png /abuseip-badge.svg
+		}
+		header @static_immutable Cache-Control "public, max-age=31536000, immutable"
+
+		# Scripts & Styles (7-Day Cache + SWR)
+		@static_app {
+			path /style.min.css /app.js /app.min.js /dnsleak.js /maplibre/*
+		}
+		header @static_app Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
+
+		reverse_proxy ipsearch:4040 {
+			header_up -CF-Connecting-IP
+			header_up -X-Real-IP
+		}
+	}
+}
