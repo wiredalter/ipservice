@@ -106,7 +106,7 @@ https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://
 
 		# Immutable Assets (1-Year Cache)
 		@static_immutable {
-			path /fonts/* /favicon/* /preview-image.png /abuseip-badge.svg
+			path /fonts/* /favicon/* /preview-image.jpeg /abuseip-badge.svg
 		}
 		header @static_immutable Cache-Control "public, max-age=31536000, immutable"
 
