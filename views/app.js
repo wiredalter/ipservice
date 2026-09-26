@@ -347,6 +347,17 @@ function initMap() {
     map.resize();
     addStyleSwitcher();
   });
+
+  // Gracefully handle missing patterns from upstream OpenFreeMap styles
+  map.on("styleimagemissing", (e) => {
+    if (e.id === "wood-pattern") {
+      try {
+        map.addImage("wood-pattern", { width: 1, height: 1, data: new Uint8Array(4) });
+      } catch (err) {
+        // Fail silently if API ever changes
+      }
+    }
+  });
 }
 
 function updateMapTheme(theme) {
