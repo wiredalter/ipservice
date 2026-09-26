@@ -102,7 +102,7 @@ https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://
 		encode zstd gzip
 
 		import secure_headers
-		header Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.openstreetmap.org https://server.arcgisonline.com https://www.abuseipdb.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.ipsearch.uk https://bash.ws https://*.bash.ws https://tiles.openfreemap.org; worker-src 'self' blob:;"
+		header Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.openstreetmap.org https://server.arcgisonline.com https://www.abuseipdb.com https://tiles.openfreemap.org; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://server.arcgisonline.com https://*.tile.openstreetmap.org https://*.ipsearch.uk https://bash.ws https://*.bash.ws https://tiles.openfreemap.org; worker-src 'self' blob:;"
 
 		# Immutable Assets (1-Year Cache)
 		@static_immutable {
