@@ -640,14 +640,23 @@ https://ipsearch.uk, https://www.ipsearch.uk, https://ipv6.ipsearch.uk, https://
       <div class="space-y-2 pt-6">
         <h3 class="text-base font-semibold text-white">Using Cloudflare Proxy (Orange Cloud)</h3>
         <p class="text-zinc-300 text-sm leading-relaxed">
-          If you run this service behind Cloudflare's proxy network, the backend relies on the <code class="text-cyan-400">CF-Connecting-IP</code> header to determine the user's real IP address.
+          If you run this service behind Cloudflare's proxy network, the backend relies on the <code
+            class="text-cyan-400">CF-Connecting-IP</code> header to determine the user's real IP address.
         </p>
         <p class="text-zinc-300 text-sm leading-relaxed">
-          In the <code class="text-cyan-400">Caddyfile</code> template above, we aggressively strip <code class="text-cyan-400">CF-Connecting-IP</code> to prevent IP spoofing attacks. 
-          If you are using Cloudflare, you must <strong>remove</strong> the <code class="text-cyan-400">header_up -CF-Connecting-IP</code> directives from your <code class="text-cyan-400">reverse_proxy</code> blocks.
+          In the <code class="text-cyan-400">Caddyfile</code> template above, we aggressively strip <code
+            class="text-cyan-400">CF-Connecting-IP</code> to prevent IP spoofing attacks.
+          If you are using Cloudflare, you must <strong>remove</strong> the <code
+            class="text-cyan-400">header_up -CF-Connecting-IP</code> directives from your <code
+            class="text-cyan-400">reverse_proxy</code> blocks.
         </p>
         <p class="text-zinc-300 text-sm leading-relaxed">
-          <strong>Security Warning:</strong> If you allow the <code class="text-cyan-400">CF-Connecting-IP</code> header, you <em>must</em> ensure attackers cannot connect to your Caddy server directly to spoof it. You should configure your server's firewall (ufw/iptables) to only accept incoming connections on ports 80 and 443 from <a href="https://www.cloudflare.com/ips/" target="_blank" class="text-emerald-400 hover:underline">Cloudflare's official IP ranges</a>. Alternatively, you can drop non-Cloudflare traffic directly within your <code class="text-cyan-400">Caddyfile</code> like this:
+          <strong>Security Warning:</strong> If you allow the <code class="text-cyan-400">CF-Connecting-IP</code>
+          header, you <em>must</em> ensure attackers cannot connect to your Caddy server directly to spoof it. You
+          should configure your server's firewall (ufw/iptables) to only accept incoming connections on ports 80 and 443
+          from <a href="https://www.cloudflare.com/ips/" target="_blank" rel="noopener noreferrer"
+            class="text-emerald-400 hover:underline">Cloudflare's official IP ranges</a>. Alternatively, you can drop
+          non-Cloudflare traffic directly within your <code class="text-cyan-400">Caddyfile</code> like this:
         </p>
         <pre><code>@cloudflare {
     # Cloudflare's IPv4 ranges
@@ -1043,6 +1052,38 @@ docker exec crowdsec cscli lapi status</code></pre>
     </div>
 
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const preElements = document.querySelectorAll('pre');
+
+      preElements.forEach((pre) => {
+        pre.classList.add('relative', 'group');
+        pre.style.paddingRight = '3rem';
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'absolute top-2 right-2 p-1.5 rounded bg-zinc-800 text-zinc-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-zinc-700 hover:text-white flex items-center justify-center border border-zinc-700';
+        copyBtn.setAttribute('title', 'Copy code');
+        copyBtn.setAttribute('aria-label', 'Copy code snippet');
+        const copyIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+        const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        copyBtn.innerHTML = copyIcon;
+        copyBtn.addEventListener('click', () => {
+          const codeElement = pre.querySelector('code');
+          const textToCopy = codeElement ? codeElement.innerText : pre.innerText;
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            copyBtn.innerHTML = checkIcon;
+            setTimeout(() => {
+              copyBtn.innerHTML = copyIcon;
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy text: ', err);
+          });
+        });
+
+        pre.appendChild(copyBtn);
+      });
+    });
+  </script>
 </body>
 
 </html>
