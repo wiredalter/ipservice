@@ -285,7 +285,7 @@ function setupLazyMap() {
         link.rel = "stylesheet";
         link.href = "/maplibre/maplibre-gl.css";
         document.head.appendChild(link);
-        
+
         // Load JS
         const script = document.createElement("script");
         script.id = "maplibre-script";
