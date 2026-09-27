@@ -277,9 +277,36 @@ function setupLazyMap() {
   const triggerInit = () => {
     if (map) return;
 
-    // Ensure maplibregl is available (it's loaded via defer script in head)
+    // Dynamically load MapLibre JS and CSS only when the map is scrolled into view
     if (!window.maplibregl) {
-      setTimeout(triggerInit, 100);
+      if (!document.getElementById("maplibre-script")) {
+        // Load CSS
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "/maplibre/maplibre-gl.css";
+        document.head.appendChild(link);
+        
+        // Load JS
+        const script = document.createElement("script");
+        script.id = "maplibre-script";
+        script.src = "/maplibre/maplibre-gl.js";
+        script.onload = () => {
+          try {
+            initMap();
+          } catch (e) {
+            console.error("Map initialization failed:", e);
+          }
+          if (pendingMapLocation) {
+            setOrQueueMapLocation(
+              pendingMapLocation.lat,
+              pendingMapLocation.lon,
+              pendingMapLocation.city
+            );
+            pendingMapLocation = null;
+          }
+        };
+        document.body.appendChild(script);
+      }
       return;
     }
 
@@ -305,7 +332,7 @@ function setupLazyMap() {
           triggerInit();
           observer.disconnect();
         }
-      }, { rootMargin: "300px" });
+      }, { rootMargin: "50px" });
       observer.observe(mapContainer);
     } else {
       triggerInit();
