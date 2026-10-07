@@ -85,6 +85,7 @@ async function getGeoJS(ip) {
       latitude: parseFloat(data.latitude) || 0,
       longitude: parseFloat(data.longitude) || 0,
       isp: data.organization_name || "Unknown",
+      org: data.organization_name || "Unknown",
       timezone: data.timezone || "UTC",
     };
   } catch (err) {
@@ -187,7 +188,11 @@ app.get(["/api/info", "/json"], async (req, res) => {
   ) {
     const fallback = await getGeoJS(targetIp);
     if (fallback) {
+      const prevOrg = data.org;
       data = { ...data, ...fallback };
+      if (prevOrg && prevOrg !== "Unknown ISP" && prevOrg !== "Unknown") {
+        data.org = prevOrg;
+      }
       data.is_fallback = true;
       data.coordinates = `${data.latitude}, ${data.longitude}`;
     }
