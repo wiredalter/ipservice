@@ -51,11 +51,13 @@ ipsearch/
 │       └── ...
 ├── db_scripts/
 │   ├── .env.geolite2
+│   ├── .env.iana-rdap
 │   ├── .env_ip2db
 │   ├── .env_ip2px
 │   ├── .env.ipinfo
 │   ├── geolite2-update.sh
 │   ├── geolite2-update-asn.sh
+│   ├── iana-rdap-update.sh
 │   ├── ip2location-db.sh
 │   ├── ip2location-px.sh
 │   └── ipinfo-update.sh
@@ -64,7 +66,9 @@ ipsearch/
 │   ├── GeoLite2-City.mmdb
 │   ├── IP2LOCATION-LITE-DB11.IPV6.BIN
 │   ├── IP2PROXY-LITE-PX11.BIN
-│   └── ipinfo-asn.mmdb
+│   ├── ipinfo-asn.mmdb
+│   ├── rdap-ipv4.json
+│   └── rdap-ipv6.json
 ├── docker-compose.yml
 └── .env
 ```
@@ -95,13 +99,14 @@ Note: If managing DNS through Cloudflare, configure these entries with Proxy sta
 
 The application reads five binary databases mounted read-only at `/app/db` inside the container. The repository provides maintenance scripts inside `db_scripts/` to automate validation, staging, and atomic replacement of each database:
 
-| Database File                    | Provider    | Update Script                       | Description                                                                                  |
-| -------------------------------- | ----------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
-| `GeoLite2-City.mmdb`             | MaxMind     | `db_scripts/geolite2-update.sh`     | Provides city, country, postal code, latitude/longitude, and timezone mapping.               |
-| `GeoLite2-ASN.mmdb`              | MaxMind     | `db_scripts/geolite2-update-asn.sh` | Resolves Autonomous System Number (ASN) and organization name.                               |
-| `ipinfo-asn.mmdb`                | IPinfo      | `db_scripts/ipinfo-update.sh`       | Supplemental/fallback ASN intelligence file. Validated against official SHA256 API checksum. |
-| `IP2LOCATION-LITE-DB11.IPV6.BIN` | IP2Location | `db_scripts/ip2location-db.sh`      | Dual-stack database providing secondary ISP and geographic coordinate resolution.            |
-| `IP2PROXY-LITE-PX11.BIN`         | IP2Location | `db_scripts/ip2location-px.sh`      | Identifies proxies, VPN exit gateways, Tor nodes, and hosting/datacenter ranges.             |
+| Database File                       | Provider    | Update Script                       | Description                                                                                  |
+| ----------------------------------- | ----------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
+| `GeoLite2-City.mmdb`                | MaxMind     | `db_scripts/geolite2-update.sh`     | Provides city, country, postal code, latitude/longitude, and timezone mapping.               |
+| `GeoLite2-ASN.mmdb`                 | MaxMind     | `db_scripts/geolite2-update-asn.sh` | Resolves Autonomous System Number (ASN) and organization name.                               |
+| `ipinfo-asn.mmdb`                   | IPinfo      | `db_scripts/ipinfo-update.sh`       | Supplemental/fallback ASN intelligence file. Validated against official SHA256 API checksum. |
+| `IP2LOCATION-LITE-DB11.IPV6.BIN`    | IP2Location | `db_scripts/ip2location-db.sh`      | Dual-stack database providing secondary ISP and geographic coordinate resolution.            |
+| `IP2PROXY-LITE-PX11.BIN`            | IP2Location | `db_scripts/ip2location-px.sh`      | Identifies proxies, VPN exit gateways, Tor nodes, and hosting/datacenter ranges.             |
+| `rdap-ipv4.json` / `rdap-ipv6.json` | IANA        | `db_scripts/iana-rdap-update.sh`    | Optional (~35 KB) RDAP bootstrap registries routing IPv4/IPv6 WHOIS directly to authoritative RIRs (auto-fetched in memory if absent). |
 
 #### Configuring Script Environment Files
 
@@ -128,6 +133,11 @@ Each script reads an optional local configuration file in `db_scripts/`. Set dir
   IP2_TOKEN="your_ip2location_download_token"
   DB_CODE="PX11LITEBIN"
   TARGET_FILE="IP2PROXY-LITE-PX11.BIN"
+
+  # db_scripts/.env.iana-rdap (Optional — no API key required)
+  DEST_DIR="/home/user/ipsearch/ip_dbs"
+  NTFY_ENABLED=false
+  DISCORD_ENABLED=false
   ```
 
 #### Automating Updates with Cron
@@ -143,6 +153,9 @@ Configure periodic executions via the host system's crontab (`crontab -e`):
   # Run IP2Location updates on the 2nd day of every month at 05:00
   0 5 2 * * /bin/bash /home/user/ipsearch/db_scripts/ip2location-db.sh > /dev/null 2>&1
   20 5 2 * * /bin/bash /home/user/ipsearch/db_scripts/ip2location-px.sh > /dev/null 2>&1
+
+  # Run IANA RDAP bootstrap update every Sunday at 04:45
+  45 4 * * 0 /bin/bash /home/user/ipsearch/db_scripts/iana-rdap-update.sh > /dev/null 2>&1
   ```
 
 #### Zero-Downtime Hot-Reloading
@@ -597,6 +610,7 @@ chmod +x db_scripts/*.sh
 ./db_scripts/ipinfo-update.sh
 ./db_scripts/ip2location-db.sh
 ./db_scripts/ip2location-px.sh
+./db_scripts/iana-rdap-update.sh
 ```
 
 ### Step 3: Configure AppSec and start CrowdSec

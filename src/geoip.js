@@ -551,4 +551,17 @@ function getGeoData(ip) {
   }
 }
 
-module.exports = { initGeoDb, getGeoData };
+module.exports = {
+  initGeoDb,
+  getGeoData,
+  _internals: {
+    cleanValue,
+    setLookupsForTests: (mocks = {}) => {
+      cityLookup = mocks.cityLookup ?? null;
+      asnLookup = mocks.asnLookup ?? null;
+      proxyLookup = mocks.proxyLookup ?? null;
+      db11Lookup = mocks.db11Lookup ?? null;
+      ipinfoAsnLookup = mocks.ipinfoAsnLookup ?? null;
+    },
+  },
+};
