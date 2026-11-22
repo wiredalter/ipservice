@@ -346,13 +346,17 @@ app.get("/health", (req, res) => {
 
 const PORT = process.env.PORT || 4040;
 
-initGeoDb()
-  .then(() => {
-    getWhois.initWhoisBootstrap();
-    app.listen(PORT, () =>
-      console.log(`🚀 IP-Echo Service running on ${PORT}`),
-    );
-  })
-  .catch((err) => {
-    console.error("Failed to initialize databases:", err);
-  });
+if (require.main === module) {
+  initGeoDb()
+    .then(() => {
+      getWhois.initWhoisBootstrap();
+      app.listen(PORT, () =>
+        console.log(`🚀 IP-Echo Service running on ${PORT}`),
+      );
+    })
+    .catch((err) => {
+      console.error("Failed to initialize databases:", err);
+    });
+}
+
+module.exports = { app, getClientIp, isCli };
