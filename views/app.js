@@ -386,6 +386,23 @@ function updateMapTheme(theme) {
 let marker;
 window.currentScanIp = "";
 let lastReputationResult = null;
+let dualStackState = {
+  order: [],
+  records: {},
+  activeType: null,
+};
+
+const COPY_ICON_SVG = `<svg class="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2v-8a2 2 0 012-2z"></path></svg>`;
+const CHECK_ICON_SVG = `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function showToast(message) {
   const x = document.getElementById("toast");
@@ -400,16 +417,20 @@ function copyWithFeedback(ip, elId, type) {
   navigator.clipboard.writeText(ip).then(() => {
     showToast(`${type} Copied!`);
     const iconContainer = document.getElementById(elId);
-    const originalSvg = iconContainer.innerHTML;
-    iconContainer.innerHTML = `<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
-    setTimeout(() => {
-      iconContainer.innerHTML = originalSvg;
+    if (!iconContainer) return;
+    iconContainer.innerHTML = CHECK_ICON_SVG;
+    clearTimeout(iconContainer._resetTimer);
+    iconContainer._resetTimer = setTimeout(() => {
+      const current = document.getElementById(elId);
+      if (current) current.innerHTML = COPY_ICON_SVG;
     }, 2000);
   });
 }
 
-function createIpRow(ip, type) {
+function createIpRow(ip, type, options = {}) {
+  const { isActive = true, isDualStack = false } = options;
   const isV6 = type === "IPv6";
+  const safeIp = escapeHtml(ip);
   const badgeColor = isV6
     ? "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-800"
     : "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800";
@@ -419,17 +440,65 @@ function createIpRow(ip, type) {
     : "text-3xl md:text-4xl";
   const iconId = `copy-icon-${type}`;
 
+  const activeClasses = isDualStack
+    ? isActive
+      ? "ring-2 ring-emerald-500/50 border-emerald-500/70 dark:border-emerald-500/70"
+      : "opacity-80 hover:opacity-100"
+    : "";
+
+  const statusControl = isDualStack
+    ? isActive
+      ? `<button type="button" aria-pressed="true" onclick="event.stopPropagation(); selectDualStackIp('${type}')" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">Active</button>`
+      : `<button type="button" aria-pressed="false" onclick="event.stopPropagation(); selectDualStackIp('${type}')" class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Inspect</button>`
+    : "";
+
+  const cardAction = isDualStack
+    ? `selectDualStackIp('${type}')`
+    : `copyWithFeedback('${safeIp}', '${iconId}', '${type}')`;
+
   return `
-    <div class="atlas-panel group cursor-pointer flex flex-col items-center gap-3 px-6 py-5 hover:border-emerald-400/50 dark:hover:border-emerald-500/50 transition-all flex-1 min-w-[280px] w-full" onclick="copyWithFeedback('${ip}', '${iconId}', '${type}')">
-        <div class="flex justify-between items-center w-full">
-            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-widest ${badgeColor}">${type}</span>
-            <div id="${iconId}" class="shrink-0">
-                <svg class="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2v-8a2 2 0 012-2z"></path></svg>
+    <div class="atlas-panel group cursor-pointer flex flex-col items-center gap-3 px-6 py-5 hover:border-emerald-400/50 dark:hover:border-emerald-500/50 transition-all flex-1 min-w-[280px] w-full ${activeClasses}" onclick="${cardAction}">
+        <div class="flex justify-between items-center w-full gap-2">
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-widest ${badgeColor}">${type}</span>
+                ${statusControl}
             </div>
+            <button type="button" id="${iconId}" aria-label="Copy ${type} address" title="Copy ${type}" class="shrink-0 p-1 -m-1 rounded hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors" onclick="event.stopPropagation(); copyWithFeedback('${safeIp}', '${iconId}', '${type}')">
+                ${COPY_ICON_SVG}
+            </button>
         </div>
-        <h1 class="font-bold tracking-tight break-all font-mono text-center ${textSize} text-zinc-800 dark:text-white py-2 m-0">${ip}</h1>
+        <div class="font-bold tracking-tight break-all font-mono text-center ${textSize} text-zinc-800 dark:text-white py-2 m-0">${safeIp}</div>
     </div>
   `;
+}
+
+function renderIpCards() {
+  const displayArea = document.getElementById("ip-display-area");
+  if (!displayArea) return;
+  const isDualStack = dualStackState.order.length > 1;
+  displayArea.innerHTML = dualStackState.order
+    .map((type) => {
+      const record = dualStackState.records[type];
+      if (!record) return "";
+      return createIpRow(record.ip, type, {
+        isActive: type === dualStackState.activeType,
+        isDualStack,
+      });
+    })
+    .join("");
+}
+
+function selectDualStackIp(type) {
+  const record = dualStackState.records[type];
+  if (!record) return;
+  if (dualStackState.activeType === type) {
+    copyWithFeedback(record.ip, `copy-icon-${type}`, type);
+    return;
+  }
+  dualStackState.activeType = type;
+  renderIpCards();
+  populateDetails(record);
+  showToast(`Inspecting ${type}`);
 }
 
 async function fetchSmartIPs() {
@@ -475,7 +544,13 @@ async function fetchSmartIPs() {
     const primaryIsV6 = primaryData.ip.includes(":");
     const primaryType = primaryIsV6 ? "IPv6" : "IPv4";
 
-    displayArea.innerHTML = createIpRow(primaryData.ip, primaryType);
+    dualStackState = {
+      order: [primaryType],
+      records: { [primaryType]: primaryData },
+      activeType: primaryType,
+    };
+
+    renderIpCards();
     populateDetails(primaryData);
 
     // Only fetch secondary protocol IP if we are checking the client's own IP
@@ -490,7 +565,9 @@ async function fetchSmartIPs() {
           if (secData.ip && secData.ip !== primaryData.ip) {
             const secIsV6 = secData.ip.includes(":");
             if ((primaryIsV6 && !secIsV6) || (!primaryIsV6 && secIsV6)) {
-              displayArea.innerHTML += createIpRow(secData.ip, missingType);
+              dualStackState.order.push(missingType);
+              dualStackState.records[missingType] = secData;
+              renderIpCards();
             }
           }
         }
@@ -600,12 +677,18 @@ async function searchIp() {
   try {
     const res = await fetch(`/api/info?ip=${encodeURIComponent(input)}`);
     const data = await res.json();
+    if (data.error) {
+      showToast(data.error);
+      return;
+    }
+    const type = data.ip.includes(":") ? "IPv6" : "IPv4";
+    dualStackState = {
+      order: [type],
+      records: { [type]: data },
+      activeType: type,
+    };
+    renderIpCards();
     populateDetails(data);
-    const type = input.includes(":") ? "IPv6" : "IPv4";
-    document.getElementById("ip-display-area").innerHTML = createIpRow(
-      data.ip,
-      type,
-    );
     document.getElementById("mainLocation").innerText =
       `${data.city}, ${data.country}`;
   } catch (e) {
@@ -638,7 +721,9 @@ async function checkReputation() {
   btn.innerHTML = `<svg class="animate-spin h-3 w-3 mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> SCANNING...`;
 
   try {
-    const res = await fetch(`/api/reputation?ip=${window.currentScanIp}`);
+    const res = await fetch(
+      `/api/reputation?ip=${encodeURIComponent(window.currentScanIp)}`,
+    );
     const data = await res.json();
     lastReputationResult = data;
 
@@ -796,20 +881,19 @@ async function checkWhois() {
   }, 10);
 
   try {
-    const res = await fetch(`/api/whois?ip=${window.currentScanIp}`);
+    const res = await fetch(
+      `/api/whois?ip=${encodeURIComponent(window.currentScanIp)}`,
+    );
     const data = await res.json();
 
     if (data.error) throw new Error(data.error);
 
     if (data.is_raw) {
       const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
-      let formattedRawText = data.raw_whois
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;") // Sanitize HTML first
-        .replace(
-          emailRegex,
-          '<a href="mailto:$1" class="text-emerald-600 dark:text-emerald-400 hover:underline">$1</a>',
-        );
+      let formattedRawText = escapeHtml(data.raw_whois).replace(
+        emailRegex,
+        '<a href="mailto:$1" class="text-emerald-600 dark:text-emerald-400 hover:underline">$1</a>',
+      );
       // --- RENDER FALLBACK TERMINAL UI ---
       content.innerHTML = `
                 <div class="bg-zinc-100 dark:bg-[#09090b] border border-zinc-300 dark:border-zinc-700 p-4 rounded-xl font-mono text-[11px] md:text-xs text-emerald-700 dark:text-emerald-400 overflow-y-auto max-h-[50vh] custom-scrollbar whitespace-pre-wrap shadow-inner">
@@ -819,45 +903,48 @@ ${formattedRawText}
             `;
     } else {
       // --- RENDER GRID UI ---
+      const abuseList = Array.isArray(data.abuse_contacts)
+        ? data.abuse_contacts
+        : [];
       let emailsHtml =
-        data.abuse_contacts.length > 0
-          ? data.abuse_contacts
-            .map(
-              (e) =>
-                `<a href="mailto:${e}" class="text-emerald-500 hover:underline">${e}</a>`,
-            )
-            .join(", ")
+        abuseList.length > 0
+          ? abuseList
+              .map((e) => {
+                const safeEmail = escapeHtml(e);
+                return `<a href="mailto:${safeEmail}" class="text-emerald-500 hover:underline">${safeEmail}</a>`;
+              })
+              .join(", ")
           : '<span class="text-zinc-400">Not provided</span>';
 
       content.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
                         <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Network Name</span>
-                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${data.network_name}</span>
+                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${escapeHtml(data.network_name)}</span>
                     </div>
                     <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
                         <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">IP Range</span>
-                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${data.network_range}</span>
+                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${escapeHtml(data.network_range)}</span>
                     </div>
                     <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50 sm:col-span-2">
                         <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Organization</span>
-                        <span class="text-zinc-800 dark:text-zinc-200">${data.organization}</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${escapeHtml(data.organization)}</span>
                     </div>
                     <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
                         <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Allocation Type</span>
-                        <span class="text-zinc-800 dark:text-zinc-200">${data.type}</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${escapeHtml(data.type)}</span>
                     </div>
                     <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
                         <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Registry Handle</span>
-                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${data.handle} (${data.country})</span>
+                        <span class="font-mono text-zinc-800 dark:text-zinc-200 break-all">${escapeHtml(data.handle)} (${escapeHtml(data.country)})</span>
                     </div>
                     <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
                         <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Registered</span>
-                        <span class="text-zinc-800 dark:text-zinc-200">${data.registration_date}</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${escapeHtml(data.registration_date)}</span>
                     </div>
                     <div class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-700/50">
                         <span class="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Last Updated</span>
-                        <span class="text-zinc-800 dark:text-zinc-200">${data.updated_date}</span>
+                        <span class="text-zinc-800 dark:text-zinc-200">${escapeHtml(data.updated_date)}</span>
                     </div>
                 </div>
                 <div class="mt-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-500/20">

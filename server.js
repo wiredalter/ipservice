@@ -280,7 +280,8 @@ app.get("/api/reputation", async (req, res) => {
 
 // WHOIS / RDAP logic
 app.get("/api/whois", async (req, res) => {
-  const ip = req.query.ip || getClientIp(req);
+  const rawIp = Array.isArray(req.query.ip) ? req.query.ip[0] : req.query.ip;
+  const ip = (typeof rawIp === "string" ? rawIp : getClientIp(req)).trim();
   const ua = req.headers["user-agent"];
   if (!maxmind.validate(ip)) {
     return res.status(400).json({ error: "Invalid IP address" });
@@ -347,6 +348,7 @@ const PORT = process.env.PORT || 4040;
 
 initGeoDb()
   .then(() => {
+    getWhois.initWhoisBootstrap();
     app.listen(PORT, () =>
       console.log(`🚀 IP-Echo Service running on ${PORT}`),
     );

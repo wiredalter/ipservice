@@ -4,7 +4,9 @@ ip_dbs
 ip_dbs/
 *.mmdb
 *LITE*.BIN
+rdap-ipv*.json
 db_scripts/
+test/
 
 # --- Nginx Proxy Manager Data ---
 npm
