@@ -54,15 +54,233 @@ function cleanValue(val) {
   const upper = trimmed.toUpperCase();
   if (
     upper.includes("INVALID IP") ||
+    upper.includes("INVALID_IP") ||
     upper.includes("MISSING") ||
     upper.includes("NOT SUPPORTED") ||
+    upper.includes("NOT APPLICABLE") ||
+    upper.includes("IPV6_NOT_SUPPORTED") ||
     upper.includes("IPV6 ADDRESS MISSING") ||
     upper.includes("UNAVAILABLE") ||
-    upper.includes("INCORRECT IP2PROXY")
+    upper.includes("INCORRECT IP2PROXY") ||
+    upper.includes("INCORRECT IP2LOCATION")
   ) {
     return null;
   }
   return trimmed;
+}
+
+function normalizeLocationName(val) {
+  if (typeof val !== "string") return "";
+  return val
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function extractCoordinates(rawLat, rawLong) {
+  const lat = typeof rawLat === "number" ? rawLat : parseFloat(rawLat);
+  const long = typeof rawLong === "number" ? rawLong : parseFloat(rawLong);
+  if (
+    Number.isFinite(lat) &&
+    Number.isFinite(long) &&
+    (lat !== 0 || long !== 0)
+  ) {
+    return { lat, long };
+  }
+  return { lat: null, long: null };
+}
+
+function parseOffsetMinutes(str) {
+  if (typeof str !== "string") return null;
+  const trimmed = str.trim();
+  if (!trimmed) return null;
+
+  const hhmm = trimmed.match(/^([+-])(\d{1,2}):(\d{2})$/);
+  if (hhmm) {
+    const sign = hhmm[1] === "-" ? -1 : 1;
+    const hours = Number(hhmm[2]);
+    const mins = Number(hhmm[3]);
+    if (hours > 14 || mins >= 60) return null;
+    return sign * (hours * 60 + mins);
+  }
+
+  const gmt = trimmed.match(/^GMT(?:([+-])(\d{1,2})(?::(\d{2}))?)?$/);
+  if (gmt) {
+    if (!gmt[1]) return 0;
+    const sign = gmt[1] === "-" ? -1 : 1;
+    const hours = Number(gmt[2]);
+    const mins = gmt[3] ? Number(gmt[3]) : 0;
+    if (hours > 14 || mins >= 60) return null;
+    return sign * (hours * 60 + mins);
+  }
+
+  return null;
+}
+
+const ianaOffsetCache = new Map();
+const JAN_SAMPLE_DATE = new Date("2026-01-15T00:00:00Z");
+const JUL_SAMPLE_DATE = new Date("2026-07-15T00:00:00Z");
+
+function getIanaZoneOffsets(ianaZone) {
+  if (typeof ianaZone !== "string" || !ianaZone.trim()) return null;
+  const zone = ianaZone.trim();
+  if (ianaOffsetCache.has(zone)) return ianaOffsetCache.get(zone);
+
+  try {
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      timeZoneName: "shortOffset",
+    });
+    const offsets = new Set();
+    for (const sampleDate of [JAN_SAMPLE_DATE, JUL_SAMPLE_DATE]) {
+      const part = fmt
+        .formatToParts(sampleDate)
+        .find((p) => p.type === "timeZoneName");
+      const mins = part ? parseOffsetMinutes(part.value) : null;
+      if (mins !== null) offsets.add(mins);
+    }
+    const result = offsets.size > 0 ? offsets : null;
+    ianaOffsetCache.set(zone, result);
+    return result;
+  } catch (_) {
+    ianaOffsetCache.set(zone, null);
+    return null;
+  }
+}
+
+function isIanaTimezoneCompatible(ianaZone, db11Offset) {
+  const offsets = getIanaZoneOffsets(ianaZone);
+  if (!offsets) return false;
+  const db11Minutes = parseOffsetMinutes(db11Offset);
+  if (db11Minutes === null) return true;
+  return offsets.has(db11Minutes);
+}
+
+function extractMaxMindLocation(cityData) {
+  const coords = extractCoordinates(
+    cityData?.location?.latitude,
+    cityData?.location?.longitude,
+  );
+  return {
+    country: cleanValue(cityData?.country?.names?.en),
+    countryCode: cleanValue(cityData?.country?.iso_code),
+    city: cleanValue(cityData?.city?.names?.en),
+    region: cleanValue(cityData?.subdivisions?.[0]?.names?.en),
+    timezone: cleanValue(cityData?.location?.time_zone),
+    zip: cleanValue(cityData?.postal?.code),
+    lat: coords.lat,
+    long: coords.long,
+  };
+}
+
+function extractDb11Location(db11Data) {
+  const coords = extractCoordinates(db11Data?.latitude, db11Data?.longitude);
+  return {
+    country: cleanValue(db11Data?.countryLong),
+    countryCode: cleanValue(db11Data?.countryShort),
+    city: cleanValue(db11Data?.city),
+    region: cleanValue(db11Data?.region),
+    timezone: cleanValue(db11Data?.timeZone),
+    zip: cleanValue(db11Data?.zipCode),
+    lat: coords.lat,
+    long: coords.long,
+  };
+}
+
+/**
+ * Merge location records from GeoLite2-City (primary) and IP2Location DB11 (fallback)
+ * without mixing incompatible fields across different cities or countries.
+ */
+function mergeLocationData(cityData, db11Data) {
+  const mm = extractMaxMindLocation(cityData);
+  const db11 = extractDb11Location(db11Data);
+
+  const sameCountry =
+    mm.countryCode && db11.countryCode
+      ? mm.countryCode.toUpperCase() === db11.countryCode.toUpperCase()
+      : Boolean(
+          mm.country &&
+          db11.country &&
+          normalizeLocationName(mm.country) ===
+            normalizeLocationName(db11.country),
+        );
+
+  const sameCity =
+    sameCountry &&
+    Boolean(mm.city && db11.city) &&
+    normalizeLocationName(mm.city) === normalizeLocationName(db11.city);
+
+  const sameRegion =
+    sameCountry &&
+    Boolean(mm.region && db11.region) &&
+    normalizeLocationName(mm.region) === normalizeLocationName(db11.region);
+
+  if (mm.city) {
+    const hasMmCoords = mm.lat !== null && mm.long !== null;
+    const hasDbCoords = sameCity && db11.lat !== null && db11.long !== null;
+    return {
+      country: mm.country || (sameCountry ? db11.country : null) || "Unknown",
+      country_code:
+        mm.countryCode || (sameCountry ? db11.countryCode : null) || "XX",
+      city: mm.city,
+      region: mm.region || (sameCity ? db11.region : null) || "Unknown",
+      timezone: mm.timezone || (sameCity ? db11.timezone : null) || "Unknown",
+      latitude: hasMmCoords ? mm.lat : hasDbCoords ? db11.lat : 0,
+      longitude: hasMmCoords ? mm.long : hasDbCoords ? db11.long : 0,
+      zip: mm.zip || (sameCity ? db11.zip : null) || "N/A",
+    };
+  }
+
+  if (db11.city) {
+    const hasDbCoords = db11.lat !== null && db11.long !== null;
+    const preferMmTimezone =
+      sameCountry && isIanaTimezoneCompatible(mm.timezone, db11.timezone);
+    return {
+      country: (sameCountry && mm.country) || db11.country || "Unknown",
+      country_code: db11.countryCode || "XX",
+      city: db11.city,
+      region: db11.region || (sameCountry ? mm.region : null) || "Unknown",
+      timezone:
+        (preferMmTimezone ? mm.timezone : null) ||
+        db11.timezone ||
+        (sameCountry ? mm.timezone : null) ||
+        "Unknown",
+      latitude: hasDbCoords ? db11.lat : 0,
+      longitude: hasDbCoords ? db11.long : 0,
+      zip: db11.zip || "N/A",
+    };
+  }
+
+  if (mm.country || mm.countryCode) {
+    const hasMmCoords = mm.lat !== null && mm.long !== null;
+    const hasDbCoords =
+      sameCountry && db11.lat !== null && db11.long !== null;
+    return {
+      country: mm.country || (sameCountry ? db11.country : null) || "Unknown",
+      country_code:
+        mm.countryCode || (sameCountry ? db11.countryCode : null) || "XX",
+      city: "Unknown",
+      region: mm.region || (sameCountry ? db11.region : null) || "Unknown",
+      timezone:
+        mm.timezone || (sameCountry ? db11.timezone : null) || "Unknown",
+      latitude: hasMmCoords ? mm.lat : hasDbCoords ? db11.lat : 0,
+      longitude: hasMmCoords ? mm.long : hasDbCoords ? db11.long : 0,
+      zip: mm.zip || (sameRegion ? db11.zip : null) || "N/A",
+    };
+  }
+
+  const hasDbCoords = db11.lat !== null && db11.long !== null;
+  return {
+    country: db11.country || "Unknown",
+    country_code: db11.countryCode || "XX",
+    city: "Unknown",
+    region: db11.region || "Unknown",
+    timezone: db11.timezone || "Unknown",
+    latitude: hasDbCoords ? db11.lat : 0,
+    longitude: hasDbCoords ? db11.long : 0,
+    zip: db11.zip || "N/A",
+  };
 }
 
 let cityLookup, asnLookup, proxyLookup, db11Lookup, ipinfoAsnLookup;
@@ -337,11 +555,6 @@ function getGeoData(ip) {
       }
     }
 
-    // Helper: Prioritize Primary -> Secondary -> Fallback
-    const pick = (primary, secondary, fallback = "Unknown") => {
-      return cleanValue(primary) || cleanValue(secondary) || fallback;
-    };
-
     // --- SANITIZE IP2PROXY DATA ---
     const rawProxyType = cleanValue(proxyData.proxyType);
     const rawUsage = cleanValue(proxyData.usageType);
@@ -491,51 +704,19 @@ function getGeoData(ip) {
     }
 
     // --- FINAL MERGE ---
-    const cityDataCity = cleanValue(cityData?.city?.names?.en);
-    const db11DataCity = cleanValue(db11Data.city);
-
-    let finalCountry, finalCountryCode, finalCity, finalRegion, finalTimezone, lat, long, finalZip;
-
-    if (!cityDataCity && db11DataCity) {
-      // Use DB11 primarily for location to avoid mixing different providers' data
-      finalCountry = pick(db11Data.countryLong, cityData?.country?.names?.en);
-      finalCountryCode = pick(db11Data.countryShort, cityData?.country?.iso_code, "XX");
-      finalCity = db11DataCity;
-      finalRegion = cleanValue(db11Data.region) || cleanValue(cityData?.subdivisions?.[0]?.names?.en) || "Unknown";
-      // MaxMind IANA timezone (e.g. Europe/London) is preferred over DB11 offset (e.g. +00:00) if available
-      finalTimezone = cleanValue(cityData?.location?.time_zone) || cleanValue(db11Data.timeZone) || "Unknown";
-      lat = parseFloat(db11Data.latitude) || cityData?.location?.latitude || 0;
-      long = parseFloat(db11Data.longitude) || cityData?.location?.longitude || 0;
-      finalZip = cleanValue(db11Data.zipCode) || cleanValue(cityData?.postal?.code) || "N/A";
-    } else {
-      // Use CityData (MaxMind) primarily, with DB11 as fallback
-      finalCountry = pick(cityData?.country?.names?.en, db11Data.countryLong);
-      finalCountryCode = pick(cityData?.country?.iso_code, db11Data.countryShort, "XX");
-      finalCity = pick(cityData?.city?.names?.en, db11Data.city);
-      finalRegion = pick(cityData?.subdivisions?.[0]?.names?.en, db11Data.region);
-      finalTimezone = pick(cityData?.location?.time_zone, db11Data.timeZone);
-
-      lat = cityData?.location?.latitude || 0;
-      long = cityData?.location?.longitude || 0;
-      if (lat === 0 && long === 0 && cleanValue(db11Data.latitude) && db11Data.latitude !== "0.000000") {
-        lat = parseFloat(db11Data.latitude) || 0;
-        long = parseFloat(db11Data.longitude) || 0;
-      }
-
-      finalZip = cleanValue(cityData?.postal?.code) || cleanValue(db11Data.zipCode) || "N/A";
-    }
+    const location = mergeLocationData(cityData, db11Data);
 
     return {
       ip,
-      country: finalCountry,
-      country_code: finalCountryCode,
-      city: finalCity,
-      region: finalRegion,
-      timezone: finalTimezone,
-      coordinates: `${lat}, ${long}`,
-      latitude: lat,
-      longitude: long,
-      zip: finalZip,
+      country: location.country,
+      country_code: location.country_code,
+      city: location.city,
+      region: location.region,
+      timezone: location.timezone,
+      coordinates: `${location.latitude}, ${location.longitude}`,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      zip: location.zip,
       asn: asnNumber,
       org: orgName,
       network: networkCidr,
@@ -554,8 +735,11 @@ function getGeoData(ip) {
 module.exports = {
   initGeoDb,
   getGeoData,
+  mergeLocationData,
   _internals: {
     cleanValue,
+    isIanaTimezoneCompatible,
+    mergeLocationData,
     setLookupsForTests: (mocks = {}) => {
       cityLookup = mocks.cityLookup ?? null;
       asnLookup = mocks.asnLookup ?? null;

@@ -161,9 +161,13 @@ app.get("/", (req, res) => {
 
 // 2. API Endpoint
 app.get(["/api/info", "/json"], async (req, res) => {
-  const targetIp = req.query.ip || getClientIp(req);
+  const requestedIp = req.query.ip;
+  if (requestedIp !== undefined && typeof requestedIp !== "string") {
+    return res.status(400).json({ error: "Invalid IP" });
+  }
+  const targetIp = requestedIp || getClientIp(req);
   const ua = req.headers["user-agent"];
-  if (!maxmind.validate(targetIp))
+  if (typeof targetIp !== "string" || !maxmind.validate(targetIp))
     return res.status(400).json({ error: "Invalid IP" });
 
   // --- CACHE CHECK ---
@@ -189,12 +193,17 @@ app.get(["/api/info", "/json"], async (req, res) => {
     const fallback = await getGeoJS(targetIp);
     if (fallback) {
       const prevOrg = data.org;
-      data = { ...data, ...fallback };
+      data = {
+        ...data,
+        ...fallback,
+        region: fallback.region || "Unknown",
+        zip: "N/A",
+        is_fallback: true,
+        coordinates: `${fallback.latitude}, ${fallback.longitude}`,
+      };
       if (prevOrg && prevOrg !== "Unknown ISP" && prevOrg !== "Unknown") {
         data.org = prevOrg;
       }
-      data.is_fallback = true;
-      data.coordinates = `${data.latitude}, ${data.longitude}`;
     }
   }
 
@@ -265,9 +274,13 @@ app.get("/cli", async (req, res) => {
 
 // IP Reputation logic
 app.get("/api/reputation", async (req, res) => {
-  const ip = req.query.ip || getClientIp(req);
+  const requestedIp = req.query.ip;
+  if (requestedIp !== undefined && typeof requestedIp !== "string") {
+    return res.status(400).json({ error: "Invalid IP address" });
+  }
+  const ip = requestedIp || getClientIp(req);
   const ua = req.headers["user-agent"];
-  if (!maxmind.validate(ip)) {
+  if (typeof ip !== "string" || !maxmind.validate(ip)) {
     return res.status(400).json({ error: "Invalid IP address" });
   }
   const result = await getReputation(ip);
@@ -280,10 +293,13 @@ app.get("/api/reputation", async (req, res) => {
 
 // WHOIS / RDAP logic
 app.get("/api/whois", async (req, res) => {
-  const rawIp = Array.isArray(req.query.ip) ? req.query.ip[0] : req.query.ip;
-  const ip = (typeof rawIp === "string" ? rawIp : getClientIp(req)).trim();
+  const requestedIp = req.query.ip;
+  if (requestedIp !== undefined && typeof requestedIp !== "string") {
+    return res.status(400).json({ error: "Invalid IP address" });
+  }
+  const ip = (requestedIp || getClientIp(req)).trim();
   const ua = req.headers["user-agent"];
-  if (!maxmind.validate(ip)) {
+  if (typeof ip !== "string" || !maxmind.validate(ip)) {
     return res.status(400).json({ error: "Invalid IP address" });
   }
   const result = await getWhois(ip);

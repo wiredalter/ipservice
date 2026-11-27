@@ -40,6 +40,14 @@ test("getReputation validates IPs and matches IPv4/IPv6 CIDR rules in memory blo
     ip: "not-an-ip",
     error: "Invalid IP",
   });
+  assert.deepEqual(await getReputation(null), {
+    ip: "",
+    error: "Invalid IP",
+  });
+  assert.deepEqual(await getReputation(null), {
+    ip: "",
+    error: "Invalid IP",
+  });
 
   const list = new BlockList();
   list.addSubnet("203.0.113.0", 24, "ipv4");
