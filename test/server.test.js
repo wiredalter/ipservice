@@ -105,8 +105,15 @@ test("API routes validate IPs, return config, local geo JSON, CLI dashboard, and
   const cfg = cfgRes.json();
   assert.ok(cfg.v4_url && cfg.v6_url);
 
-  // Invalid IP rejection across endpoints
-  for (const endpoint of ["/api/info?ip=bad-ip", "/api/whois?ip=bad-ip", "/api/reputation?ip=bad-ip"]) {
+  // Invalid IP and duplicate query param array rejection across endpoints
+  for (const endpoint of [
+    "/api/info?ip=bad-ip",
+    "/api/whois?ip=bad-ip",
+    "/api/reputation?ip=bad-ip",
+    "/api/info?ip=1.1.1.1&ip=2.2.2.2",
+    "/api/whois?ip=1.1.1.1&ip=2.2.2.2",
+    "/api/reputation?ip=1.1.1.1&ip=2.2.2.2",
+  ]) {
     const res = await requestApp(endpoint);
     assert.equal(res.status, 400, `Expected 400 for ${endpoint}`);
   }
